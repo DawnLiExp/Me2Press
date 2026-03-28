@@ -7,16 +7,8 @@
     "%lld" : {
       "shouldTranslate" : false
     },
-    "%lld %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld %2$@"
-          }
-        }
-      },
-      "shouldTranslate" : false
+    "%lld " : {
+
     },
     "%lld%%" : {
       "shouldTranslate" : false
@@ -448,13 +440,34 @@
       }
     },
     "L1" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L1"
+          }
+        }
+      }
     },
     "L2" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L2"
+          }
+        }
+      }
     },
     "L3" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L3"
+          }
+        }
+      }
     },
     "label.batch_drag_desc" : {
       "localizations" : {

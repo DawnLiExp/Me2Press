@@ -65,7 +65,7 @@ struct FileQueueView: View {
                     Image(systemName: "questionmark.circle")
                         .font(.system(size: 12))
                         .foregroundStyle(.tertiary)
-                        .help(String(localized: tooltip))
+                        .help(Text(tooltip))
                 }
 
                 Spacer()
@@ -80,7 +80,7 @@ struct FileQueueView: View {
                     }
                     .buttonStyle(.plain)
 
-                    Text("\(items.count) \(String(localized: countLabel))")
+                    Text("\(items.count) ") + Text(countLabel)
                         .font(.system(size: 12))
                         .foregroundStyle(.tertiary)
                 }

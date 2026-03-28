@@ -228,10 +228,12 @@ private struct PatternRow: View {
             // IMPORTANT: .labelsHidden() suppresses implicit label space that would push
             // the segmented control out of vertical alignment; .frame(width:) caps its width
             // without fixedSize() to avoid the control expanding the row unexpectedly.
-            Picker("", selection: $pattern.level) {
+            Picker(selection: $pattern.level) {
                 Text("L1").tag(1)
                 Text("L2").tag(2)
                 Text("L3").tag(3)
+            } label: {
+                EmptyView()
             }
             .pickerStyle(.segmented)
             .labelsHidden()
