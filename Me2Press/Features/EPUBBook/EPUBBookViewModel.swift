@@ -58,6 +58,8 @@ class EPUBBookViewModel {
         let progress = self.progress
         let coordinator = ConversionCoordinator()
 
+        progress.beginBatch(totalFiles: jobs.count)
+        progress.isConcurrent = maxConcurrency > 1
         isConverting = true
         conversionTask = Task { [weak self] in
             let sink: ConversionEventSink = { event in
