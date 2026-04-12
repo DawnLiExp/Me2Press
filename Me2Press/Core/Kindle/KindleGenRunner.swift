@@ -35,28 +35,23 @@ actor KindleGenRunner {
         process.standardOutput = pipe
         process.standardError = pipe
 
-        try process.run()
-
-        // Read output and wait for exit; terminate the process on Task cancellation.
-        // Pipe read errors are suppressed — they occur when the process is terminated externally.
-        var outputStr = ""
-        await withTaskCancellationHandler {
-            do {
-                for try await line in pipe.fileHandleForReading.bytes.lines {
-                    outputStr += line + "\n"
-                }
-            } catch {
-                // pipe closed (process ended or was terminated) — ignore read errors
-            }
-            process.waitUntilExit()
-        } onCancel: {
-            process.terminate()
+        let outputTask = Task { [fileHandle = pipe.fileHandleForReading] in
+            await Self.collectOutput(from: fileHandle)
         }
+
+        let exitCode: Int32
+        do {
+            exitCode = try await runProcess(process)
+        } catch {
+            try? pipe.fileHandleForWriting.close()
+            _ = await outputTask.value
+            throw error
+        }
+
+        let outputStr = await outputTask.value
 
         // Propagate cancellation immediately; do not act on kindlegen output after termination.
         try Task.checkCancellation()
-
-        let exitCode = process.terminationStatus
 
         // IMPORTANT: kindlegen exit code semantics differ from Unix conventions.
         // 0 = success, 1 = converted with warnings (output file is still valid), 2 = fatal error.
@@ -76,5 +71,47 @@ actor KindleGenRunner {
         }
 
         throw Me2PressError.kindlegenFailed(exitCode: exitCode, output: outputStr)
+    }
+
+    // MARK: - Private
+
+    /// Runs kindlegen without blocking a cooperative executor thread.
+    /// Cancellation sends SIGTERM and still waits for termination before returning.
+    private func runProcess(_ process: Process) async throws -> Int32 {
+        let exitCode = try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Int32, Error>) in
+                process.terminationHandler = { terminatedProcess in
+                    continuation.resume(returning: terminatedProcess.terminationStatus)
+                }
+                do {
+                    try process.run()
+                } catch {
+                    process.terminationHandler = nil
+                    continuation.resume(throwing: error)
+                }
+            }
+        } onCancel: {
+            if process.isRunning {
+                process.terminate()
+            }
+        }
+
+        process.terminationHandler = nil
+        return exitCode
+    }
+
+    /// Reads kindlegen output to completion. Read errors are expected during forced termination.
+    private nonisolated static func collectOutput(from fileHandle: FileHandle) async -> String {
+        var output = ""
+
+        do {
+            for try await line in fileHandle.bytes.lines {
+                output += line + "\n"
+            }
+        } catch {
+            // pipe closed (process ended or was terminated) — ignore read errors
+        }
+
+        return output
     }
 }
