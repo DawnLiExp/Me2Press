@@ -2,15 +2,16 @@
 //  TextBookViewModel.swift
 //  Me2Press
 //
-//  Outputs EPUB directly, or routes through kindlegen → DualMetaFix for AZW3.
+//  @MainActor UI state for TXT conversion; heavy work runs through ConversionCoordinator.
 //
 
-import AppKit
+import Foundation
 import SwiftUI
 
-enum OutputFormat: String, CaseIterable, Identifiable {
+enum OutputFormat: String, CaseIterable, Identifiable, Sendable {
     case epub = "EPUB"
     case azw3 = "AZW3"
+
     var id: String {
         rawValue
     }
@@ -18,133 +19,154 @@ enum OutputFormat: String, CaseIterable, Identifiable {
 
 @MainActor
 @Observable
-class TextBookViewModel: ConversionViewModel {
+class TextBookViewModel {
+    var items: [URL] = []
+    var isConverting = false
+    let progress = ConversionProgress()
+
     var outputFormat: OutputFormat = .azw3
     var indentParagraph: Bool = true
     var keepLineBreaks: Bool = false
     var coverImageURL: URL?
 
-    override func accepts(_ url: URL) -> Bool {
-        url.pathExtension.lowercased() == "txt"
+    private var conversionTask: Task<Void, Never>?
+
+    @discardableResult
+    func add(_ urls: [URL]) async -> Int {
+        var added = 0
+        for url in urls where url.pathExtension.lowercased() == "txt" {
+            if !items.contains(url) {
+                items.append(url)
+                added += 1
+            }
+        }
+        return added
     }
 
-    override func validateBeforeStart(appSettings: AppSettings, logger: LogManager) -> Bool {
+    func remove(_ url: URL) {
+        items.removeAll(where: { $0 == url })
+    }
+
+    func clearAll() {
+        items.removeAll()
+    }
+
+    func move(from source: IndexSet, to destination: Int) {
+        items.move(fromOffsets: source, toOffset: destination)
+    }
+
+    func stopConversion() {
+        progress.cancelSimulation()
+        conversionTask?.cancel()
+    }
+
+    func startConversion(appSettings: AppSettings, logger: LogManager) {
+        guard !items.isEmpty, !isConverting else { return }
         if outputFormat == .azw3, !appSettings.isKindleGenReady {
             logger.log(level: .error, "kindlegen is not configured for AZW3 conversion.")
-            return false
+            return
         }
-        return true
+
+        let jobs = items.map {
+            TextConversionJob(
+                sourceURL: $0,
+                outputFormat: outputFormat,
+                indentParagraph: indentParagraph,
+                keepLineBreaks: keepLineBreaks,
+                coverImageURL: coverImageURL,
+                chapterPatterns: appSettings.chapterPatterns,
+                authorName: appSettings.authorName,
+                kindlegenURL: appSettings.kindlegenURL
+            )
+        }
+        let maxConcurrency = appSettings.maxConcurrency
+        let progress = self.progress
+        let coordinator = ConversionCoordinator()
+
+        isConverting = true
+        conversionTask = Task { [weak self] in
+            let sink: ConversionEventSink = { event in
+                await MainActor.run {
+                    Self.apply(event: event, progress: progress, logger: logger)
+                }
+            }
+
+            defer {
+                progress.cancelSimulation()
+                self?.isConverting = false
+                self?.conversionTask = nil
+            }
+
+            await coordinator.runBatch(
+                jobs: jobs.map(ConversionJob.text),
+                maxConcurrency: maxConcurrency,
+                eventSink: sink
+            )
+
+            if !Task.isCancelled, progress.isCompleted {
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
     }
 
-    override func convertItem(_ url: URL, index: Int, appSettings: AppSettings, logger: LogManager) async throws {
-        let log = AppLogger(category: "TextBook", uiLogger: logger)
-        let name = url.deletingPathExtension().lastPathComponent
-        let fileURL = url
-        let format = outputFormat
-        let indent = indentParagraph
-        let keepBreaks = keepLineBreaks
-        let cover = coverImageURL
-        let chapterPatterns = appSettings.chapterPatterns
-        let author = appSettings.authorName
-        // Optional because kindlegenURL may be nil when outputting EPUB;
-        // the AZW3 path is guarded by validateBeforeStart so `if let runner` always succeeds there.
-        let runner: KindleGenRunner? = appSettings.kindlegenURL.map { KindleGenRunner(kindlegenPath: $0) }
+    private static func apply(
+        event: ConversionEvent,
+        progress: ConversionProgress,
+        logger: LogManager
+    ) {
+        switch event {
+        case .batchStarted(let totalFiles, let isConcurrent):
+            progress.beginBatch(totalFiles: totalFiles)
+            progress.isConcurrent = isConcurrent
 
-        // ── Step 1: Parse TXT ─────────────────────────────────
-        let isAZW3 = (format == .azw3)
-        progress.set(local: 0.0, step: String(localized: "progress.parsing"))
-        var t = CFAbsoluteTimeGetCurrent()
-        let parser = TXTParser()
-        let parsedBook = try await parser.parse(
-            url: fileURL,
-            indentParagraph: indent,
-            keepLineBreaks: keepBreaks,
-            chapterPatterns: chapterPatterns
-        )
-        progress.set(local: isAZW3 ? 0.07 : 0.12,
-                     step: String(localized: "progress.parsing"))
-        logStep(name, step: String(localized: "log.step.parse_txt"), since: t, info: "chapters=\(parsedBook.chapters.count)", log: log)
+        case .itemStarted(let index, let name):
+            progress.cancelSimulation()
+            progress.beginFile(index: index, name: name)
 
-        // ── Prepare temp dirs ─────────────────────────────────
-        try Task.checkCancellation()
+        case .progress(let local, let step):
+            progress.cancelSimulation()
+            progress.set(local: local, step: step)
 
-        let outputFolder = fileURL.deletingLastPathComponent()
-        let tempDir = outputFolder.appendingPathComponent(".me2press_tmp_\(UUID().uuidString)")
-        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: tempDir) }
-        let epubContentDir = tempDir.appendingPathComponent("content")
-        try FileManager.default.createDirectory(at: epubContentDir, withIntermediateDirectories: true)
-        let uuid = UUID().uuidString
+        case .simulation(let localFrom, let localTo, let step, let rate):
+            progress.startSimulation(from: localFrom, to: localTo, step: step, rate: rate)
 
-        var actualCover = cover
-        if actualCover == nil {
-            // Auto-generate a cover when no custom cover is provided so the EPUB always has one.
-            let genCoverURL = tempDir.appendingPathComponent("generated_cover.jpg")
-            try await CoverGenerator.generateAsync(title: name, author: author, to: genCoverURL)
-            actualCover = genCoverURL
-        }
+        case .volumeLabel(let label):
+            progress.volumeLabel = label
 
-        // ── Step 2: Build EPUB ────────────────────────────────
-        try Task.checkCancellation()
-        progress.set(local: isAZW3 ? 0.07 : 0.12,
-                     step: String(localized: "progress.building_epub"))
-        t = CFAbsoluteTimeGetCurrent()
-        try await EPUBBuilder.buildAsync(
-            book: parsedBook,
-            uuid: uuid,
-            coverImage: actualCover,
-            indentParagraph: indent,
-            author: author,
-            tempDir: epubContentDir
-        )
-        progress.set(local: isAZW3 ? 0.17 : 0.28,
-                     step: String(localized: "progress.building_epub"))
-        logStep(name, step: String(localized: "log.step.build_epub"), since: t, log: log)
+        case .itemCompleted(let name):
+            progress.cancelSimulation()
+            progress.markFileCompleted(name: name)
 
-        let tempEpubURL = tempDir.appendingPathComponent("\(name).epub")
-
-        // ── Step 3: Pack ZIP (simulate) ───────────────────────
-        let zipFrom: Double = isAZW3 ? 0.17 : 0.28
-        let zipTo: Double = isAZW3 ? 0.35 : 1.0
-        let zipSim = progress.startSimulation(
-            from: zipFrom, to: zipTo,
-            step: String(localized: "progress.packing"), rate: 0.15
-        )
-        t = CFAbsoluteTimeGetCurrent()
-        try await ZIPWriter.pack(directoryURL: epubContentDir, to: tempEpubURL)
-        zipSim.cancel()
-        progress.set(local: zipTo, step: String(localized: "progress.packing"))
-        logStep(name, step: String(localized: "log.step.pack_zip"), since: t, log: log)
-
-        if format == .azw3 {
-            if let runner {
-                // ── Step 4: kindlegen (simulate) ──────────────
-                let kgSim = progress.startSimulation(
-                    from: 0.35, to: 0.95,
-                    step: String(localized: "progress.kindlegen"), rate: 0.08
-                )
-                t = CFAbsoluteTimeGetCurrent()
-                let mobiPath = try await runner.convert(epubPath: tempEpubURL)
-                kgSim.cancel()
-                progress.set(local: 0.95, step: String(localized: "progress.kindlegen"))
-                logStep(name, step: String(localized: "log.step.kindlegen"), since: t, log: log)
-
-                let azw3Path = outputFolder.appendingPathComponent("\(name).azw3")
-                try? FileManager.default.removeItem(at: azw3Path)
-                try FileManager.default.moveItem(at: mobiPath, to: azw3Path)
-                try? FileManager.default.removeItem(at: tempEpubURL)
-
-                // ── Step 5: DualMetaFix ───────────────────────
-                progress.set(local: 0.95, step: String(localized: "progress.fixing_meta"))
-                t = CFAbsoluteTimeGetCurrent()
-                try await DualMetaFix.fixAsync(mobiPath: azw3Path, uuid: uuid)
-                progress.set(local: 1.0, step: String(localized: "progress.fixing_meta"))
-                logStep(name, step: String(localized: "log.step.dualmetafix"), since: t, log: log)
+        case .itemFailed(_, let errorDescription, let recoverySuggestion):
+            logger.log(level: .error, errorDescription)
+            if let recoverySuggestion {
+                logger.log(level: .warn, recoverySuggestion)
             }
-        } else {
-            let targetEpubURL = outputFolder.appendingPathComponent("\(name).epub")
-            try? FileManager.default.removeItem(at: targetEpubURL)
-            try FileManager.default.moveItem(at: tempEpubURL, to: targetEpubURL)
+
+        case .log(let level, let message):
+            logger.log(level: map(level), message)
+
+        case .batchCompleted(let totalFiles, let elapsed):
+            progress.cancelSimulation()
+            progress.value = 1.0
+            progress.isCompleted = true
+            logger.log(level: .info, String(localized: "log.all_items_done \(totalFiles) \(elapsed)"))
+
+        case .batchCancelled:
+            progress.cancelSimulation()
+            progress.volumeLabel = ""
+            logger.log(level: .warn, String(localized: "log.batch_cancelled"))
+        }
+    }
+
+    private static func map(_ level: ConversionLogLevel) -> LogManager.LogLevel {
+        switch level {
+        case .info:
+            .info
+        case .warn:
+            .warn
+        case .error:
+            .error
         }
     }
 }

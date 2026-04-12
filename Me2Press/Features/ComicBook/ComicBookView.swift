@@ -139,7 +139,7 @@ private struct ComicFolderListView: View {
                     return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir)
                         && isDir.boolValue
                 },
-                onDropped: viewModel.add,
+                onDropped: { await viewModel.add($0) },
                 onMove: viewModel.move
             )
 

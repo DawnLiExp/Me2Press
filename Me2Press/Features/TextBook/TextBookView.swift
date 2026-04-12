@@ -124,7 +124,7 @@ private struct TextBookFileListView: View {
                 onRemove: viewModel.remove,
                 onReveal: { NSWorkspace.shared.activateFileViewerSelecting([$0]) },
                 accepts: { $0.pathExtension.lowercased() == "txt" },
-                onDropped: viewModel.add,
+                onDropped: { await viewModel.add($0) },
                 onMove: viewModel.move
             )
 

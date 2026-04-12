@@ -43,7 +43,7 @@ struct FileQueueView: View {
     let accepts: (URL) -> Bool
     /// Called with only the accepted URLs after a successful drop.
     /// Returns the number of items actually added to the queue.
-    let onDropped: ([URL]) -> Int
+    let onDropped: ([URL]) async -> Int
     /// Optional reorder handler. When provided, rows become drag-reorderable.
     var onMove: ((IndexSet, Int) -> Void)?
 
@@ -163,7 +163,7 @@ struct FileQueueView: View {
                     // • Content rejection: items pass the type filter but onDropped() adds nothing
                     //   (e.g. a valid-extension folder that contains no usable image files).
                     if !valid.isEmpty {
-                        let addedCount = withAnimation { onDropped(valid) }
+                        let addedCount = await onDropped(valid)
                         if addedCount == 0 {
                             triggerRejectionHint()
                         }

@@ -2,60 +2,146 @@
 //  EPUBBookViewModel.swift
 //  Me2Press
 //
-//  Supports cooperative Task cancellation with process termination.
+//  @MainActor UI state for EPUB conversion; heavy work runs through ConversionCoordinator.
 //
 
-import AppKit
+import Foundation
 import SwiftUI
 
 @MainActor
 @Observable
-class EPUBBookViewModel: ConversionViewModel {
-    override func accepts(_ url: URL) -> Bool {
-        url.pathExtension.lowercased() == "epub"
-    }
+class EPUBBookViewModel {
+    var items: [URL] = []
+    var isConverting = false
+    let progress = ConversionProgress()
 
-    override func validateBeforeStart(appSettings: AppSettings, logger: LogManager) -> Bool {
-        guard appSettings.isKindleGenReady, appSettings.kindlegenURL != nil else {
-            logger.log(level: .error, "kindlegen is not configured for AZW3 conversion.")
-            return false
+    private var conversionTask: Task<Void, Never>?
+
+    @discardableResult
+    func add(_ urls: [URL]) async -> Int {
+        var added = 0
+        for url in urls where url.pathExtension.lowercased() == "epub" {
+            if !items.contains(url) {
+                items.append(url)
+                added += 1
+            }
         }
-        return true
+        return added
     }
 
-    override func convertItem(_ url: URL, index: Int, appSettings: AppSettings, logger: LogManager) async throws {
-        let log = AppLogger(category: "EPUBBook", uiLogger: logger)
-        guard let kindlegenURL = appSettings.kindlegenURL else { return }
-        let runner = KindleGenRunner(kindlegenPath: kindlegenURL)
-        let name = url.deletingPathExtension().lastPathComponent
-        let epubURL = url
-        // IMPORTANT: uuid is written as the ASIN (EXTH 113) by DualMetaFix.
-        // A unique per-conversion value ensures the Kindle library treats each output as a distinct item.
-        let uuid = UUID().uuidString
+    func remove(_ url: URL) {
+        items.removeAll(where: { $0 == url })
+    }
 
-        // ── Step 1: kindlegen (simulate) ──────────────────────
-        let kgSim = progress.startSimulation(
-            from: 0.0, to: 0.95,
-            step: String(localized: "progress.kindlegen"), rate: 0.08
-        )
-        var t = CFAbsoluteTimeGetCurrent()
-        let mobiPath = try await runner.convert(epubPath: epubURL)
-        kgSim.cancel()
-        progress.set(local: 0.95, step: String(localized: "progress.kindlegen"))
+    func clearAll() {
+        items.removeAll()
+    }
 
-        logStep(name, step: "kindlegen", since: t, log: log)
+    func move(from source: IndexSet, to destination: Int) {
+        items.move(fromOffsets: source, toOffset: destination)
+    }
 
-        let outputFolder = epubURL.deletingLastPathComponent()
-        let azw3Path = outputFolder.appendingPathComponent("\(name).azw3")
-        try? FileManager.default.removeItem(at: azw3Path)
-        try FileManager.default.moveItem(at: mobiPath, to: azw3Path)
+    func stopConversion() {
+        progress.cancelSimulation()
+        conversionTask?.cancel()
+    }
 
-        // ── Step 2: DualMetaFix ───────────────────────────────
-        try Task.checkCancellation()
-        progress.set(local: 0.95, step: String(localized: "progress.fixing_meta"))
-        t = CFAbsoluteTimeGetCurrent()
-        try await DualMetaFix.fixAsync(mobiPath: azw3Path, uuid: uuid)
-        progress.set(local: 1.0, step: String(localized: "progress.fixing_meta"))
-        logStep(name, step: "DualMetaFix", since: t, log: log)
+    func startConversion(appSettings: AppSettings, logger: LogManager) {
+        guard !items.isEmpty, !isConverting else { return }
+        guard appSettings.isKindleGenReady, let kindlegenURL = appSettings.kindlegenURL else {
+            logger.log(level: .error, "kindlegen is not configured for AZW3 conversion.")
+            return
+        }
+
+        let jobs = items.map { EPUBConversionJob(sourceURL: $0, kindlegenURL: kindlegenURL) }
+        let maxConcurrency = appSettings.maxConcurrency
+        let progress = self.progress
+        let coordinator = ConversionCoordinator()
+
+        isConverting = true
+        conversionTask = Task { [weak self] in
+            let sink: ConversionEventSink = { event in
+                await MainActor.run {
+                    Self.apply(event: event, progress: progress, logger: logger)
+                }
+            }
+
+            defer {
+                progress.cancelSimulation()
+                self?.isConverting = false
+                self?.conversionTask = nil
+            }
+
+            await coordinator.runBatch(
+                jobs: jobs.map(ConversionJob.epub),
+                maxConcurrency: maxConcurrency,
+                eventSink: sink
+            )
+
+            if !Task.isCancelled, progress.isCompleted {
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
+    }
+
+    private static func apply(
+        event: ConversionEvent,
+        progress: ConversionProgress,
+        logger: LogManager
+    ) {
+        switch event {
+        case .batchStarted(let totalFiles, let isConcurrent):
+            progress.beginBatch(totalFiles: totalFiles)
+            progress.isConcurrent = isConcurrent
+
+        case .itemStarted(let index, let name):
+            progress.cancelSimulation()
+            progress.beginFile(index: index, name: name)
+
+        case .progress(let local, let step):
+            progress.cancelSimulation()
+            progress.set(local: local, step: step)
+
+        case .simulation(let localFrom, let localTo, let step, let rate):
+            progress.startSimulation(from: localFrom, to: localTo, step: step, rate: rate)
+
+        case .volumeLabel(let label):
+            progress.volumeLabel = label
+
+        case .itemCompleted(let name):
+            progress.cancelSimulation()
+            progress.markFileCompleted(name: name)
+
+        case .itemFailed(_, let errorDescription, let recoverySuggestion):
+            logger.log(level: .error, errorDescription)
+            if let recoverySuggestion {
+                logger.log(level: .warn, recoverySuggestion)
+            }
+
+        case .log(let level, let message):
+            logger.log(level: map(level), message)
+
+        case .batchCompleted(let totalFiles, let elapsed):
+            progress.cancelSimulation()
+            progress.value = 1.0
+            progress.isCompleted = true
+            logger.log(level: .info, String(localized: "log.all_items_done \(totalFiles) \(elapsed)"))
+
+        case .batchCancelled:
+            progress.cancelSimulation()
+            progress.volumeLabel = ""
+            logger.log(level: .warn, String(localized: "log.batch_cancelled"))
+        }
+    }
+
+    private static func map(_ level: ConversionLogLevel) -> LogManager.LogLevel {
+        switch level {
+        case .info:
+            .info
+        case .warn:
+            .warn
+        case .error:
+            .error
+        }
     }
 }
