@@ -147,7 +147,7 @@ struct SettingsView: View {
                 HStack {
                     Text(String(localized: "setting.concurrency.label"))
                     Spacer()
-                    Text("\(settings.maxConcurrency)")
+                    Text(verbatim: "\(settings.maxConcurrency)")
                         .monospacedDigit()
                         .font(.system(.body, design: .rounded).bold())
                         .foregroundStyle(.primary)
@@ -217,9 +217,9 @@ private struct PatternRow: View {
             // IMPORTANT: Empty first-argument + prompt: prevents Form (grouped style) from
             // rendering the label as fixed left-side text instead of placeholder text.
             TextField(
-                "",
                 text: $pattern.value,
-                prompt: Text(String(localized: "setting.chapter_regex.placeholder"))
+                prompt: Text(String(localized: "setting.chapter_regex.placeholder")),
+                label: { EmptyView() }
             )
             .font(.system(size: 12, design: .monospaced))
             .focused($fieldFocused)

@@ -1,18 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "" : {
-
-    },
-    "%lld" : {
-      "shouldTranslate" : false
-    },
-    "%lld " : {
-
-    },
-    "%lld%%" : {
-      "shouldTranslate" : false
-    },
     "About Me2Press" : {
       "localizations" : {
         "en" : {

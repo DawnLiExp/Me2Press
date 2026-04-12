@@ -85,7 +85,7 @@ private struct ComicFolderListView: View {
 
                         Spacer()
 
-                        Text("\(settings.maxConcurrency)")
+                        Text(verbatim: "\(settings.maxConcurrency)")
                             .monospacedDigit()
                             .font(.system(.subheadline, design: .rounded).bold())
                             .foregroundStyle(.primary)

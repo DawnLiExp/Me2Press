@@ -94,7 +94,7 @@ struct FileQueueView: View {
                     }
                     .buttonStyle(.plain)
 
-                    Text("\(items.count) ") + Text(countLabel)
+                    (Text(verbatim: "\(items.count) ") + Text(countLabel))
                         .font(.system(size: 12))
                         .foregroundStyle(.tertiary)
                 }

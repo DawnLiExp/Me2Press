@@ -116,7 +116,7 @@ struct ConversionProgressView: View {
                     .foregroundStyle(.green)
                     .transition(.scale(scale: 0.6).combined(with: .opacity))
             } else {
-                Text("\(Int(progress.value * 100))%")
+                Text(verbatim: "\(Int(progress.value * 100))%")
                     .font(.system(size: 34, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .contentTransition(.numericText())
