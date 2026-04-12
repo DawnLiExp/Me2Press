@@ -13,7 +13,7 @@ import UniformTypeIdentifiers
 
 /// A chapter-detection regex rule with a stable UUID identity and a heading level.
 /// `level`: 1 = part/volume (outermost), 2 = chapter, 3 = section. Defaults to 1.
-struct ChapterPattern: Identifiable, Codable, Equatable {
+struct ChapterPattern: Identifiable, Codable, Equatable, Sendable {
     var id: UUID
     var value: String
     /// Heading level written to the EPUB TOC and HTML heading tag (h1–h3).

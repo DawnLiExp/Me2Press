@@ -14,7 +14,7 @@ enum ComicVolumeSplitter {
     /// kindlegen reports E23026 when uncompressed assets exceed ~629 MB (629,145,600 bytes).
     /// 380 MB provides ~20 MB headroom above the per-volume image budget to account for
     /// EPUB overhead (XML, CSS, nav files) that is not counted in image sizes alone.
-    static let defaultThreshold: Int = 380 * 1024 * 1024 // 398,458,880 bytes
+    nonisolated static let defaultThreshold: Int = 380 * 1024 * 1024 // 398,458,880 bytes
 
     /// Splits an ordered image URL array into volumes sized by disk usage.
     ///
@@ -27,7 +27,7 @@ enum ComicVolumeSplitter {
     ///
     /// Edge case: a single image that alone exceeds the threshold forms its own volume
     /// rather than being appended indefinitely to the previous one.
-    static func split(
+    nonisolated static func split(
         imageURLs: [URL],
         threshold: Int = defaultThreshold
     ) -> [[URL]] {
@@ -58,13 +58,13 @@ enum ComicVolumeSplitter {
     }
 
     /// Returns the total on-disk size of an image URL array using stat (no content read).
-    static func estimateTotalSize(imageURLs: [URL]) -> Int {
+    nonisolated static func estimateTotalSize(imageURLs: [URL]) -> Int {
         imageURLs.reduce(0) { acc, url in acc + fileSize(of: url) }
     }
 
     // MARK: - Private
 
-    private static func fileSize(of url: URL) -> Int {
+    private nonisolated static func fileSize(of url: URL) -> Int {
         (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
     }
 }
