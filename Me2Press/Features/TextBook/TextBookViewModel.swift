@@ -32,15 +32,26 @@ class TextBookViewModel {
     private var conversionTask: Task<Void, Never>?
 
     @discardableResult
-    func add(_ urls: [URL]) async -> Int {
+    func add(_ urls: [URL]) async -> FileQueueView.FileQueueDropSummary {
         var added = 0
+        var duplicateCount = 0
+        var seenIdentities = Set(items.map(normalizedDropIdentity(for:)))
+
         for url in urls where url.pathExtension.lowercased() == "txt" {
-            if !items.contains(url) {
+            let identity = normalizedDropIdentity(for: url)
+            if seenIdentities.insert(identity).inserted {
                 items.append(url)
                 added += 1
+            } else {
+                duplicateCount += 1
             }
         }
-        return added
+
+        return .init(
+            addedCount: added,
+            duplicateCount: duplicateCount,
+            contentRejectedCount: 0
+        )
     }
 
     func remove(_ url: URL) {

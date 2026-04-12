@@ -29,3 +29,14 @@ func loadFileURL(from provider: NSItemProvider) async throws -> URL? {
         }
     }
 }
+
+/// Returns a stable identity string for drag-and-drop deduplication.
+///
+/// The queue keeps the first dropped URL for display, but duplicate detection
+/// must collapse symlink and path-normalization variations that point to the same
+/// filesystem location.
+func normalizedDropIdentity(for url: URL) -> String {
+    url.standardizedFileURL
+        .resolvingSymlinksInPath()
+        .path
+}

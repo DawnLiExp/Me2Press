@@ -131,6 +131,7 @@ private struct ComicFolderListView: View {
                 emptyIcon: "folder.badge.plus",
                 emptyTitle: "label.drag_image_folders",
                 emptySubtitle: "label.comic_folder_desc",
+                contentRejectedMessage: "label.drop_no_usable_comic_content",
                 onClearAll: viewModel.clearAll,
                 onRemove: viewModel.remove,
                 onReveal: { NSWorkspace.shared.activateFileViewerSelecting([$0]) },

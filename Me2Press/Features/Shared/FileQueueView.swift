@@ -5,14 +5,26 @@
 //  Generic queue container used by all three conversion tabs.
 //  Composes DropHintView (empty state) and FileRowView (item rows)
 //  inside a dashed-border drop target.
-//  Shows a rejection banner when unsupported file types are dropped,
-//  or when valid-typed items produce no additions (e.g. empty comic folders).
+//  Shows reason-specific rejection banners for unsupported or content-invalid drops,
+//  while duplicate items are silently ignored.
 //
 
 import SwiftUI
 import UniformTypeIdentifiers
 
 struct FileQueueView: View {
+    struct FileQueueDropSummary: Sendable {
+        let addedCount: Int
+        let duplicateCount: Int
+        let contentRejectedCount: Int
+
+        static let empty = FileQueueDropSummary(
+            addedCount: 0,
+            duplicateCount: 0,
+            contentRejectedCount: 0
+        )
+    }
+
     let items: [URL]
     @Binding var isTargeted: Bool
 
@@ -33,6 +45,7 @@ struct FileQueueView: View {
     let emptyIcon: String
     let emptyTitle: LocalizedStringResource
     let emptySubtitle: LocalizedStringResource
+    var contentRejectedMessage: LocalizedStringResource? = nil
 
     // MARK: Actions
 
@@ -42,14 +55,15 @@ struct FileQueueView: View {
     /// Validates whether a dropped URL is acceptable for this queue.
     let accepts: (URL) -> Bool
     /// Called with only the accepted URLs after a successful drop.
-    /// Returns the number of items actually added to the queue.
-    let onDropped: ([URL]) async -> Int
+    /// Returns a summary that distinguishes additions, duplicates, and content rejection.
+    let onDropped: ([URL]) async -> FileQueueDropSummary
     /// Optional reorder handler. When provided, rows become drag-reorderable.
     var onMove: ((IndexSet, Int) -> Void)?
 
     // MARK: Rejection state
 
     @State private var showRejectionHint = false
+    @State private var rejectionMessage: LocalizedStringResource?
     @State private var rejectionTask: Task<Void, Never>?
 
     var body: some View {
@@ -123,8 +137,8 @@ struct FileQueueView: View {
 
                 // ── Rejection banner overlay ───────────────────────────────
 
-                if showRejectionHint {
-                    RejectionBanner()
+                if showRejectionHint, let rejectionMessage {
+                    RejectionBanner(message: rejectionMessage)
                         .padding(.bottom, 12)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -156,19 +170,14 @@ struct FileQueueView: View {
                     }
 
                     let valid = resolved.filter { accepts($0) }
-                    let rejectedByType = resolved.count - valid.count
+                    let unsupportedCount = resolved.count - valid.count
+                    let summary = valid.isEmpty ? .empty : await onDropped(valid)
 
-                    // Distinguish two rejection cases:
-                    // • Type mismatch: none of the dropped items pass the accepts() filter.
-                    // • Content rejection: items pass the type filter but onDropped() adds nothing
-                    //   (e.g. a valid-extension folder that contains no usable image files).
-                    if !valid.isEmpty {
-                        let addedCount = await onDropped(valid)
-                        if addedCount == 0 {
-                            triggerRejectionHint()
-                        }
-                    } else if rejectedByType > 0 {
-                        triggerRejectionHint()
+                    if let rejectionMessage = determineRejectionMessage(
+                        unsupportedCount: unsupportedCount,
+                        contentRejectedCount: summary.contentRejectedCount
+                    ) {
+                        triggerRejectionHint(message: rejectionMessage)
                     }
                 }
                 return true
@@ -179,10 +188,11 @@ struct FileQueueView: View {
     // MARK: - Private
 
     /// Shows the rejection banner for 2 seconds, resetting the timer on rapid successive drops.
-    private func triggerRejectionHint() {
+    private func triggerRejectionHint(message: LocalizedStringResource) {
         // Cancel any in-flight hide task before restarting the timer so that rapid
         // consecutive drops each receive a full 2-second display window.
         rejectionTask?.cancel()
+        rejectionMessage = message
         withAnimation(.spring(duration: 0.3)) {
             showRejectionHint = true
         }
@@ -192,20 +202,42 @@ struct FileQueueView: View {
             withAnimation(.easeOut(duration: 0.25)) {
                 showRejectionHint = false
             }
+            rejectionMessage = nil
         }
+    }
+
+    private func determineRejectionMessage(
+        unsupportedCount: Int,
+        contentRejectedCount: Int
+    ) -> LocalizedStringResource? {
+        if unsupportedCount > 0, contentRejectedCount > 0 {
+            return "label.drop_partial_rejection"
+        }
+
+        if unsupportedCount > 0 {
+            return "label.unsupported_drop"
+        }
+
+        if contentRejectedCount > 0 {
+            return contentRejectedMessage
+        }
+
+        return nil
     }
 }
 
 // MARK: - RejectionBanner
 
 private struct RejectionBanner: View {
+    let message: LocalizedStringResource
+
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.orange)
 
-            Text(String(localized: "label.unsupported_drop"))
+            Text(message)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.primary.opacity(0.85))
         }

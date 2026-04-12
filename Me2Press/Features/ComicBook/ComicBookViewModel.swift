@@ -33,16 +33,42 @@ class ComicBookViewModel {
     private var conversionTask: Task<Void, Never>?
 
     @discardableResult
-    func add(_ urls: [URL]) async -> Int {
-        let resolved = await ComicFolderResolver.resolveDroppedFolders(urls)
+    func add(_ urls: [URL]) async -> FileQueueView.FileQueueDropSummary {
         var added = 0
+        var duplicateCount = 0
+        var contentRejectedCount = 0
+        var seenSourceIdentities = Set<String>()
+        var seenItemIdentities = Set(items.map(normalizedDropIdentity(for:)))
 
-        for folder in resolved where !items.contains(folder) {
-            items.append(folder)
-            added += 1
+        for sourceURL in urls {
+            let sourceIdentity = normalizedDropIdentity(for: sourceURL)
+            if !seenSourceIdentities.insert(sourceIdentity).inserted {
+                duplicateCount += 1
+                continue
+            }
+
+            let resolvedFolders = await ComicFolderResolver.resolveDroppedFolders([sourceURL])
+            if resolvedFolders.isEmpty {
+                contentRejectedCount += 1
+                continue
+            }
+
+            for folder in resolvedFolders {
+                let folderIdentity = normalizedDropIdentity(for: folder)
+                if seenItemIdentities.insert(folderIdentity).inserted {
+                    items.append(folder)
+                    added += 1
+                } else {
+                    duplicateCount += 1
+                }
+            }
         }
 
-        return added
+        return .init(
+            addedCount: added,
+            duplicateCount: duplicateCount,
+            contentRejectedCount: contentRejectedCount
+        )
     }
 
     func remove(_ url: URL) {
