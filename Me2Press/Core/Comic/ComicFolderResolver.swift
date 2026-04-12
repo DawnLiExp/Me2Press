@@ -22,8 +22,9 @@ enum ComicFolderResolver {
 
         for url in urls {
             for folder in resolveComicFolders(url) {
-                if seen.insert(folder.path).inserted {
-                    results.append(folder)
+                let canonicalFolder = canonicalFolderURL(folder)
+                if seen.insert(canonicalFolder.path).inserted {
+                    results.append(canonicalFolder)
                 }
             }
         }
@@ -48,18 +49,19 @@ enum ComicFolderResolver {
 
     /// Returns [] for empty folders or images buried 3+ levels deep.
     private nonisolated static func resolveComicFolders(_ url: URL) -> [URL] {
+        let folderURL = canonicalFolderURL(url)
         let fm = FileManager.default
         var isDir: ObjCBool = false
-        guard fm.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue else {
+        guard fm.fileExists(atPath: folderURL.path, isDirectory: &isDir), isDir.boolValue else {
             return []
         }
 
-        if hasDirectImages(in: url) {
-            return [url]
+        if hasDirectImages(in: folderURL) {
+            return [folderURL]
         }
 
         guard let children = try? fm.contentsOfDirectory(
-            at: url,
+            at: folderURL,
             includingPropertiesForKeys: [.isDirectoryKey],
             options: [.skipsHiddenFiles]
         ) else { return [] }
@@ -78,5 +80,9 @@ enum ComicFolderResolver {
         }
 
         return []
+    }
+
+    private nonisolated static func canonicalFolderURL(_ url: URL) -> URL {
+        url.standardizedFileURL.resolvingSymlinksInPath()
     }
 }
