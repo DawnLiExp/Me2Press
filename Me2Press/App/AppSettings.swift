@@ -2,12 +2,10 @@
 //  AppSettings.swift
 //  Me2Press
 //
-//  Persists all settings via UserDefaults. kindlegen readiness is re-validated
-//  asynchronously on every path change with a 5-second structured-concurrency timeout.
+//  Persists UI settings via UserDefaults and coordinates kindlegen probe results.
 //
 
 import SwiftUI
-import UniformTypeIdentifiers
 
 // MARK: - ChapterPattern
 
@@ -60,12 +58,15 @@ class AppSettings {
     var kindlegenURL: URL? {
         didSet {
             UserDefaults.standard.set(kindlegenURL?.path, forKey: "kindlegenPath")
-            Task { await checkKindleGenStatus() }
         }
     }
 
     var isKindleGenReady = false
     var kindlegenVersion = ""
+
+    private let kindleGenProbeService = KindleGenProbeService()
+    private var kindleGenProbeTask: Task<Void, Never>?
+    private var kindleGenProbeGeneration = 0
 
     // MARK: - Concurrency
 
@@ -109,7 +110,6 @@ class AppSettings {
     init() {
         if let path = UserDefaults.standard.string(forKey: "kindlegenPath") {
             kindlegenURL = URL(fileURLWithPath: path)
-            Task { await checkKindleGenStatus() }
         }
         let saved = UserDefaults.standard.integer(forKey: "maxConcurrency")
         maxConcurrency = Self.concurrencyRange.contains(saved) ? saved : 1
@@ -133,71 +133,62 @@ class AppSettings {
                 chapterPatterns = strings.map { ChapterPattern(value: $0, level: 1) }
             }
         }
+
+        refreshKindleGenStatus()
+    }
+    // MARK: - KindleGen Actions
+
+    func updateKindleGenURL(_ url: URL?) {
+        kindlegenURL = url
+        startKindleGenProbe(for: url)
+    }
+
+    func refreshKindleGenStatus() {
+        startKindleGenProbe(for: kindlegenURL)
     }
 
     // MARK: - Private
 
-    /// Validates the kindlegen binary by running it with `-locale en` and scanning
-    /// its output for the "Amazon kindlegen" version banner.
-    ///
-    /// Uses a racing TaskGroup to implement a 5-second timeout: one child sleeps then
-    /// terminates the process; the other reads stdout. `group.next()` returns whichever
-    /// child finishes first, after which `group.cancelAll()` stops the other.
-    private func checkKindleGenStatus() async {
-        guard let url = kindlegenURL,
-              FileManager.default.isExecutableFile(atPath: url.path)
-        else {
-            isKindleGenReady = false
-            kindlegenVersion = ""
+    private func startKindleGenProbe(for url: URL?) {
+        kindleGenProbeTask?.cancel()
+        kindleGenProbeTask = nil
+        kindleGenProbeGeneration += 1
+
+        let generation = kindleGenProbeGeneration
+        let expectedURL = url
+        resetKindleGenStatus()
+
+        guard let expectedURL else { return }
+
+        let probeService = kindleGenProbeService
+        kindleGenProbeTask = Task { @MainActor [weak self, probeService, generation, expectedURL] in
+            let result = await probeService.probe(executableURL: expectedURL)
+            guard !Task.isCancelled else { return }
+            self?.applyKindleGenProbeResult(
+                result,
+                generation: generation,
+                expectedURL: expectedURL
+            )
+        }
+    }
+
+    private func applyKindleGenProbeResult(
+        _ result: KindleGenProbeResult,
+        generation: Int,
+        expectedURL: URL?
+    ) {
+        guard generation == kindleGenProbeGeneration, expectedURL == kindlegenURL else {
             return
         }
 
-        let process = Process()
-        process.executableURL = url
-        process.arguments = ["-locale", "en"]
+        isKindleGenReady = result.isReady
+        kindlegenVersion = result.version
+        kindleGenProbeTask = nil
+    }
 
-        let pipe = Pipe()
-        process.standardOutput = pipe
-
-        do {
-            try process.run()
-        } catch {
-            isKindleGenReady = false
-            kindlegenVersion = ""
-            return
-        }
-
-        let fullOutput = await withTaskGroup(of: String.self) { group in
-            group.addTask {
-                try? await Task.sleep(for: .seconds(5))
-                process.terminate()
-                return ""
-            }
-            group.addTask {
-                var output = ""
-                await withTaskCancellationHandler {
-                    do {
-                        for try await line in pipe.fileHandleForReading.bytes.lines {
-                            if !line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                output += line + "\n"
-                            }
-                        }
-                    } catch {}
-                    process.waitUntilExit()
-                } onCancel: {
-                    process.terminate()
-                }
-                return output
-            }
-            let result = await group.next() ?? ""
-            group.cancelAll()
-            for await _ in group {}
-            return result
-        }
-
-        isKindleGenReady = fullOutput.contains("Amazon kindlegen")
-        kindlegenVersion = fullOutput.components(separatedBy: .newlines)
-            .first(where: { $0.contains("Amazon kindlegen") }) ?? ""
+    private func resetKindleGenStatus() {
+        isKindleGenReady = false
+        kindlegenVersion = ""
     }
 }
 

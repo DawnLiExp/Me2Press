@@ -184,7 +184,7 @@ struct SettingsView: View {
         panel.title = String(localized: "Select kindlegen executable")
 
         if panel.runModal() == .OK, let url = panel.url {
-            settings.kindlegenURL = url
+            settings.updateKindleGenURL(url)
         }
     }
 }
