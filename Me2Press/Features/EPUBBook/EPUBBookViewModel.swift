@@ -14,6 +14,7 @@ class EPUBBookViewModel {
     var items: [URL] = []
     var isConverting = false
     let progress = ConversionProgress()
+    private let progressSimulator = ConversionProgressSimulator()
 
     private var conversionTask: Task<Void, Never>?
 
@@ -53,7 +54,7 @@ class EPUBBookViewModel {
     }
 
     func stopConversion() {
-        progress.cancelSimulation()
+        progressSimulator.cancel()
         conversionTask?.cancel()
     }
 
@@ -67,6 +68,7 @@ class EPUBBookViewModel {
         let jobs = items.map { EPUBConversionJob(sourceURL: $0, kindlegenURL: kindlegenURL) }
         let maxConcurrency = appSettings.maxConcurrency
         let progress = self.progress
+        let progressSimulator = self.progressSimulator
         let coordinator = ConversionCoordinator()
 
         progress.beginBatch(totalFiles: jobs.count)
@@ -75,12 +77,17 @@ class EPUBBookViewModel {
         conversionTask = Task { [weak self] in
             let sink: ConversionEventSink = { event in
                 await MainActor.run {
-                    Self.apply(event: event, progress: progress, logger: logger)
+                    Self.apply(
+                        event: event,
+                        progress: progress,
+                        logger: logger,
+                        simulator: progressSimulator
+                    )
                 }
             }
 
             defer {
-                progress.cancelSimulation()
+                self?.progressSimulator.cancel()
                 self?.isConverting = false
                 self?.conversionTask = nil
             }
@@ -100,29 +107,37 @@ class EPUBBookViewModel {
     private static func apply(
         event: ConversionEvent,
         progress: ConversionProgress,
-        logger: LogManager
+        logger: LogManager,
+        simulator: ConversionProgressSimulator
     ) {
         switch event {
         case .batchStarted(let totalFiles, let isConcurrent):
+            simulator.cancel()
             progress.beginBatch(totalFiles: totalFiles)
             progress.isConcurrent = isConcurrent
 
         case .itemStarted(let index, let name):
-            progress.cancelSimulation()
+            simulator.cancel()
             progress.beginFile(index: index, name: name)
 
         case .progress(let local, let step):
-            progress.cancelSimulation()
+            simulator.cancel()
             progress.set(local: local, step: step)
 
         case .simulation(let localFrom, let localTo, let step, let rate):
-            progress.startSimulation(from: localFrom, to: localTo, step: step, rate: rate)
+            simulator.start(
+                on: progress,
+                from: localFrom,
+                to: localTo,
+                step: step,
+                rate: rate
+            )
 
         case .volumeLabel(let label):
-            progress.volumeLabel = label
+            progress.setVolumeLabel(label)
 
         case .itemCompleted(let name):
-            progress.cancelSimulation()
+            simulator.cancel()
             progress.markFileCompleted(name: name)
 
         case .itemFailed(_, let errorDescription, let recoverySuggestion):
@@ -135,14 +150,13 @@ class EPUBBookViewModel {
             logger.log(level: map(level), message)
 
         case .batchCompleted(let totalFiles, let elapsed):
-            progress.cancelSimulation()
-            progress.value = 1.0
-            progress.isCompleted = true
+            simulator.cancel()
+            progress.markBatchCompleted()
             logger.log(level: .info, String(localized: "log.all_items_done \(totalFiles) \(elapsed)"))
 
         case .batchCancelled:
-            progress.cancelSimulation()
-            progress.volumeLabel = ""
+            simulator.cancel()
+            progress.markBatchCancelled()
             logger.log(level: .warn, String(localized: "log.batch_cancelled"))
         }
     }

@@ -41,14 +41,16 @@ final class ConversionProgress {
     /// Number of files completed so far (concurrent mode only).
     private(set) var completedCount: Int = 0
 
-    // MARK: - Private
-
-    private var simulationTask: Task<Void, Never>?
+    /// Internal sequence used by the simulator to reject stale updates from old batches.
+    private(set) var batchSequence: UInt64 = 0
+    /// Internal sequence used by the simulator to reject stale updates from prior files.
+    private(set) var fileSequence: UInt64 = 0
 
     // MARK: - Batch lifecycle
 
     func beginBatch(totalFiles count: Int) {
-        cancelSimulation()
+        batchSequence &+= 1
+        fileSequence = 0
         totalFiles = count
         fileIndex = 0
         completedCount = 0
@@ -61,6 +63,7 @@ final class ConversionProgress {
     }
 
     func beginFile(index: Int, name: String) {
+        fileSequence &+= 1
         fileIndex = index
         currentFileName = name
         volumeLabel = ""
@@ -75,6 +78,20 @@ final class ConversionProgress {
 
     func reset() {
         beginBatch(totalFiles: 0)
+    }
+
+    func markBatchCompleted() {
+        value = 1.0
+        isCompleted = true
+    }
+
+    func markBatchCancelled() {
+        isCompleted = false
+        volumeLabel = ""
+    }
+
+    func setVolumeLabel(_ label: String) {
+        volumeLabel = label
     }
 
     // MARK: - Step progress (sequential mode only)
@@ -99,54 +116,5 @@ final class ConversionProgress {
         completedCount = min(totalFiles, completedCount + 1)
         currentFileName = name
         value = totalFiles > 0 ? Double(completedCount) / Double(totalFiles) : 1
-    }
-
-    // MARK: - Black-box simulation (sequential mode only)
-
-    /// Starts an asymptotic progress simulation for opaque steps such as ZIP packing
-    /// or kindlegen conversion where real progress cannot be observed.
-    ///
-    /// The simulation uses `localP = localTo - (localTo - localFrom) * exp(-rate * t)`,
-    /// which approaches `localTo` without ever reaching it, guaranteeing the step
-    /// never overshoots before the real completion event cancels the task.
-    ///
-    /// In concurrent mode, this is a no-op: returns an empty Task without starting
-    /// a timer, because progress is driven by completion counts instead.
-    @discardableResult
-    func startSimulation(
-        from localFrom: Double,
-        to localTo: Double,
-        step: String,
-        rate: Double
-    ) -> Task<Void, Never> {
-        if isConcurrent {
-            self.step = step
-            return Task {}
-        }
-
-        simulationTask?.cancel()
-
-        let capturedIndex = fileIndex
-        let capturedTotal = totalFiles
-        let startTime = Date()
-
-        let task = Task { @MainActor [weak self] in
-            while !Task.isCancelled {
-                guard let self else { return }
-                let elapsed = Date().timeIntervalSince(startTime)
-                let localP = localTo - (localTo - localFrom) * exp(-rate * elapsed)
-                if self.fileIndex == capturedIndex, self.totalFiles == capturedTotal {
-                    self.set(local: localP, step: step)
-                }
-                try? await Task.sleep(for: .milliseconds(100))
-            }
-        }
-        simulationTask = task
-        return task
-    }
-
-    func cancelSimulation() {
-        simulationTask?.cancel()
-        simulationTask = nil
     }
 }
