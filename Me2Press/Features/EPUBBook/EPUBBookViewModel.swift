@@ -17,6 +17,7 @@ class EPUBBookViewModel {
     private let progressSimulator = ConversionProgressSimulator()
 
     private var conversionTask: Task<Void, Never>?
+    private var presenter: ConversionEventPresenter?
 
     @discardableResult
     func add(_ urls: [URL]) async -> FileQueueView.FileQueueDropSummary {
@@ -54,7 +55,7 @@ class EPUBBookViewModel {
     }
 
     func stopConversion() {
-        progressSimulator.cancel()
+        presenter?.cancelTransientWork()
         conversionTask?.cancel()
     }
 
@@ -68,26 +69,27 @@ class EPUBBookViewModel {
         let jobs = items.map { EPUBConversionJob(sourceURL: $0, kindlegenURL: kindlegenURL) }
         let maxConcurrency = appSettings.maxConcurrency
         let progress = self.progress
-        let progressSimulator = self.progressSimulator
+        let presenter = ConversionEventPresenter(
+            progress: progress,
+            logger: logger,
+            simulator: progressSimulator
+        )
         let coordinator = ConversionCoordinator()
 
         progress.beginBatch(totalFiles: jobs.count)
         progress.isConcurrent = maxConcurrency > 1
         isConverting = true
+        self.presenter = presenter
         conversionTask = Task { [weak self] in
             let sink: ConversionEventSink = { event in
                 await MainActor.run {
-                    Self.apply(
-                        event: event,
-                        progress: progress,
-                        logger: logger,
-                        simulator: progressSimulator
-                    )
+                    presenter.handle(event)
                 }
             }
 
             defer {
-                self?.progressSimulator.cancel()
+                self?.presenter?.cancelTransientWork()
+                self?.presenter = nil
                 self?.isConverting = false
                 self?.conversionTask = nil
             }
@@ -101,74 +103,6 @@ class EPUBBookViewModel {
             if !Task.isCancelled, progress.isCompleted {
                 try? await Task.sleep(for: .seconds(1))
             }
-        }
-    }
-
-    private static func apply(
-        event: ConversionEvent,
-        progress: ConversionProgress,
-        logger: LogManager,
-        simulator: ConversionProgressSimulator
-    ) {
-        switch event {
-        case .batchStarted(let totalFiles, let isConcurrent):
-            simulator.cancel()
-            progress.beginBatch(totalFiles: totalFiles)
-            progress.isConcurrent = isConcurrent
-
-        case .itemStarted(let index, let name):
-            simulator.cancel()
-            progress.beginFile(index: index, name: name)
-
-        case .progress(let local, let step):
-            simulator.cancel()
-            progress.set(local: local, step: step)
-
-        case .simulation(let localFrom, let localTo, let step, let rate):
-            simulator.start(
-                on: progress,
-                from: localFrom,
-                to: localTo,
-                step: step,
-                rate: rate
-            )
-
-        case .volumeLabel(let label):
-            progress.setVolumeLabel(label)
-
-        case .itemCompleted(let name):
-            simulator.cancel()
-            progress.markFileCompleted(name: name)
-
-        case .itemFailed(_, let errorDescription, let recoverySuggestion):
-            logger.log(level: .error, errorDescription)
-            if let recoverySuggestion {
-                logger.log(level: .warn, recoverySuggestion)
-            }
-
-        case .log(let level, let message):
-            logger.log(level: map(level), message)
-
-        case .batchCompleted(let totalFiles, let elapsed):
-            simulator.cancel()
-            progress.markBatchCompleted()
-            logger.log(level: .info, String(localized: "log.all_items_done \(totalFiles) \(elapsed)"))
-
-        case .batchCancelled:
-            simulator.cancel()
-            progress.markBatchCancelled()
-            logger.log(level: .warn, String(localized: "log.batch_cancelled"))
-        }
-    }
-
-    private static func map(_ level: ConversionLogLevel) -> LogManager.LogLevel {
-        switch level {
-        case .info:
-            .info
-        case .warn:
-            .warn
-        case .error:
-            .error
         }
     }
 }
