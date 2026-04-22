@@ -8,21 +8,6 @@
 import Foundation
 import SwiftUI
 
-// MARK: - ComicBookError
-
-enum ComicBookError: LocalizedError {
-    case noImagesFound(folderName: String)
-
-    var errorDescription: String? {
-        switch self {
-        case .noImagesFound(let name):
-            return String(localized: "error.no_images \(name)")
-        }
-    }
-}
-
-// MARK: - ComicBookViewModel
-
 @MainActor
 @Observable
 class ComicBookViewModel {

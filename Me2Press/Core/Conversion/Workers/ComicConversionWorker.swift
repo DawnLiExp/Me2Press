@@ -28,7 +28,7 @@ enum ComicConversionWorker {
             fileManager: FileManager.default
         )
         guard !allImages.isEmpty else {
-            throw ComicBookError.noImagesFound(folderName: baseName)
+            throw Me2PressError.noImagesFound(folderName: baseName)
         }
 
         let volumes = ComicVolumeSplitter.split(imageURLs: allImages)
