@@ -9,8 +9,8 @@ Me2Press is a macOS tool for preparing Kindle-ready books locally — converting
 ## 📸 Screenshots
 
 <div align="center">
-  <img src="docs/screenshot1.png" width="58%" alt="screenshot1"/>
-  <img src="docs/screenshot2.png" width="38%" alt="screenshot2"/>
+  <img src="docs/screenshot3.png" width="58%" alt="screenshot1"/>
+  <img src="docs/screenshot4.png" width="38%" alt="screenshot2"/>
 </div>
 
 ## ✨ Features
