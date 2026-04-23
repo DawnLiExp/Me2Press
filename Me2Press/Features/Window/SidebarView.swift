@@ -96,6 +96,8 @@ struct SidebarView: View {
                     Text(settings.isKindleGenReady ? String(localized: "status.kindlegen.ready") : String(localized: "status.kindlegen.missing"))
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
 
                     Spacer()
 

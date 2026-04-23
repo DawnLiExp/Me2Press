@@ -601,6 +601,40 @@
         }
       }
     },
+    "label.drop_no_usable_comic_content" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Usable Images Found"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件夹中未找到可用图片"
+          }
+        }
+      }
+    },
+    "label.drop_partial_rejection" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Some Items Were Not Added"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分项目未添加"
+          }
+        }
+      }
+    },
     "label.epub_desc" : {
       "localizations" : {
         "en" : {
@@ -726,40 +760,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "不支持的类型"
-          }
-        }
-      }
-    },
-    "label.drop_no_usable_comic_content" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Usable Images Found"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件夹中未找到可用图片"
-          }
-        }
-      }
-    },
-    "label.drop_partial_rejection" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Some Items Were Not Added"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "部分项目未添加"
           }
         }
       }
@@ -1468,7 +1468,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "❌ kindlegen Not Found"
+            "value" : "KindleGen Not Found"
           }
         },
         "zh-Hans" : {
@@ -1484,7 +1484,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "✅ kindlegen Ready"
+            "value" : "kindlegen Ready"
           }
         },
         "zh-Hans" : {

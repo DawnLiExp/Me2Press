@@ -43,16 +43,12 @@ struct SettingsView: View {
                     Text(settings.kindlegenVersion)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                } else {
-                    Text(String(localized: "status.kindlegen.missing"))
-                        .font(.caption)
-                        .foregroundStyle(.red)
                 }
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: settings.isKindleGenReady ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                         .foregroundStyle(settings.isKindleGenReady ? .green : .red)
-                    Text(String(localized: "status.kindlegen.ready"))
+                    Text(settings.isKindleGenReady ? String(localized: "status.kindlegen.ready") : String(localized: "status.kindlegen.missing"))
                 }
             }
         } header: {
