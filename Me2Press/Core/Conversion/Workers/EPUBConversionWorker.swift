@@ -16,6 +16,14 @@ enum EPUBConversionWorker {
         let name = job.sourceURL.deletingPathExtension().lastPathComponent
         let epubURL = job.sourceURL
         let uuid = UUID().uuidString
+        let outputFolder = epubURL.deletingLastPathComponent()
+        let workspace = try TemporaryWorkspace.create(nextTo: outputFolder)
+        defer { workspace.cleanup() }
+
+        let kindleReadyEPUBURL = try await EPUBKindleNormalizer.normalizeIfNeeded(
+            epubURL: epubURL,
+            workspace: workspace
+        )
 
         await ConversionWorkerSupport.startSimulation(
             from: 0.0,
@@ -25,7 +33,7 @@ enum EPUBConversionWorker {
             eventSink: eventSink
         )
         var t = CFAbsoluteTimeGetCurrent()
-        let mobiPath = try await runner.convert(epubPath: epubURL)
+        let mobiPath = try await runner.convert(epubPath: kindleReadyEPUBURL)
         await ConversionWorkerSupport.emitProgress(
             local: 0.95,
             step: String(localized: "progress.kindlegen"),
@@ -38,7 +46,6 @@ enum EPUBConversionWorker {
             eventSink: eventSink
         )
 
-        let outputFolder = epubURL.deletingLastPathComponent()
         let azw3Path = outputFolder.appendingPathComponent("\(name).azw3")
         try ConversionWorkerSupport.moveReplacingExisting(from: mobiPath, to: azw3Path)
 

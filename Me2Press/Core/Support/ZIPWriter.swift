@@ -71,11 +71,21 @@ enum ZIPWriter {
 
             try Task.checkCancellation()
 
-            // 2. zip -X -q -r -0 output.zip META-INF OEBPS
+            let topLevelNames = try FileManager.default.contentsOfDirectory(
+                atPath: resolvedDirectoryURL.path
+            )
+            .filter { $0 != "mimetype" }
+            .sorted()
+
+            guard !topLevelNames.isEmpty else {
+                throw Me2PressError.zipFailed(exitCode: 1)
+            }
+
+            // 2. zip -X -q -r -0 output.zip <all top-level entries except mimetype>
             let restProcess = Process()
             restProcess.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
             restProcess.currentDirectoryURL = resolvedDirectoryURL
-            restProcess.arguments = ["-X", "-q", "-r", "-0", outputURL.path, "META-INF", "OEBPS"]
+            restProcess.arguments = ["-X", "-q", "-r", "-0", outputURL.path] + topLevelNames
             try await runProcess(restProcess)
 
             guard restProcess.terminationStatus == 0 else {
