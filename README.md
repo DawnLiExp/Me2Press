@@ -36,7 +36,7 @@ All three modes support:
 
 ## 🖥 Requirements
 
-- macOS 14+
+- macOS 15+
 - kindlegen (required for AZW3 / MOBI output, not needed for EPUB): install [Kindle Previewer](https://www.amazon.com/Kindle-Previewer/b?ie=UTF8&node=21381691011) to get it, or download the standalone binary from archive.org
 
 ## 🛠 Built With

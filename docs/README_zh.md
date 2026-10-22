@@ -38,7 +38,7 @@ Me2Press 是一款 macOS 本地 Kindle 书籍制作工具，支持将 TXT 小说
 
 ## 🖥 系统要求
 
-- macOS 14+
+- macOS 15+
 - kindlegen（AZW3 / MOBI 输出必需，EPUB 导出不需要）：可安装 [Kindle Previewer](https://www.amazon.com/Kindle-Previewer/b?ie=UTF8&node=21381691011) 获取，或自行在 archive.org 等渠道下载 kindlegen 独立版
 
 ## 🛠 技术栈

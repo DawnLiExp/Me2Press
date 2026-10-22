@@ -1,0 +1,6 @@
+// Single version source for Debug, Release, app and tests.
+// Fixes increment patch; new features increment minor; breaking changes increment major.
+// Increment build once per delivered update, never for routine tests or per commit.
+// Build is a monotonic counter carried across versions; the legacy date value is retained.
+MARKETING_VERSION = 1.1.0
+CURRENT_PROJECT_VERSION = 20260329
