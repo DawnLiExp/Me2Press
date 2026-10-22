@@ -1174,6 +1174,23 @@
         }
       }
     },
+    "progress.accessibility" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversion progress"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "转换进度"
+          }
+        }
+      }
+    },
     "progress.building_epub" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1289,6 +1306,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "解析 TXT"
+          }
+        }
+      }
+    },
+    "progress.processed %lld %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Processed %1$lld of %2$lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已处理 %1$lld / %2$lld 项"
           }
         }
       }
@@ -1425,6 +1459,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在添加…"
+          }
+        }
+      }
+    },
+    "queue.remove_item %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除 %@"
           }
         }
       }
@@ -1701,6 +1752,23 @@
         }
       }
     },
+    "setting.chapter_regex.level" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chapter level"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "章节层级"
+          }
+        }
+      }
+    },
     "setting.chapter_regex.level_help" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1735,6 +1803,23 @@
         }
       }
     },
+    "setting.chapter_regex.remove" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove chapter rule"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除章节规则"
+          }
+        }
+      }
+    },
     "setting.chapter_regex.restore" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1748,6 +1833,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "恢复默认"
+          }
+        }
+      }
+    },
+    "setting.chapter_regex.rule" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chapter matching rule"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "章节匹配规则"
           }
         }
       }

@@ -20,8 +20,7 @@ struct SettingsView: View {
             performanceSection
         }
         .formStyle(.grouped)
-        .frame(width: 520)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(width: 560, height: 640)
         .padding(.bottom, 10)
         .onChange(of: settings.chapterPatterns) { _, current in
             if current != AppSettings.defaultChapterPatterns { patternsBeforeRestore = nil }
@@ -33,9 +32,12 @@ struct SettingsView: View {
     private var kindleGenSection: some View {
         Section {
             HStack {
-                TextField(String(localized: "kindlegen Path"), text: .constant(settings.kindlegenURL?.path ?? ""))
-                    .disabled(true)
-                    .labelsHidden()
+                Text(settings.kindlegenURL?.path ?? String(localized: "kindlegen Path"))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+                    .help(settings.kindlegenURL?.path ?? "")
 
                 Button(String(localized: "Select...")) {
                     selectKindleGen()
@@ -50,7 +52,7 @@ struct SettingsView: View {
                 }
             } label: {
                 HStack(spacing: 4) {
-                    Image(systemName: settings.isKindleGenReady ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    Image(systemName: settings.kindleGenStatus == .checking ? "clock" : settings.isKindleGenReady ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                         .foregroundStyle(settings.isKindleGenReady ? .green : .red)
                     Text(settings.kindleGenStatusText)
                 }
@@ -66,12 +68,14 @@ struct SettingsView: View {
         Section {
             LabeledContent {
                 TextField(
-                    String(localized: "setting.author.placeholder"),
                     text: Binding(
                         get: { settings.authorName },
                         set: { settings.authorName = $0 }
-                    )
+                    ),
+                    prompt: Text(String(localized: "setting.author.placeholder")),
+                    label: { EmptyView() }
                 )
+                .accessibilityLabel(String(localized: "setting.author.label"))
                 .multilineTextAlignment(.trailing)
             } label: {
                 Text(String(localized: "setting.author.label"))
@@ -169,6 +173,7 @@ struct SettingsView: View {
                     set: { settings.maxConcurrency = Int($0.rounded()) }
                 ), in: Double(AppSettings.concurrencyRange.lowerBound) ... Double(AppSettings.concurrencyRange.upperBound), step: 1)
                     .labelsHidden()
+                    .accessibilityLabel(String(localized: "setting.concurrency.label"))
 
                 Text(String(localized: "setting.concurrency.hint"))
                     .font(.caption)
@@ -217,58 +222,62 @@ private struct PatternRow: View {
 
     private var validityColor: Color {
         if pattern.value.isEmpty { return .secondary.opacity(0.35) }
-        let valid = (try? NSRegularExpression(pattern: pattern.value)) != nil
-        return valid ? .green : .red
+        return validationError == nil ? .green : .red
     }
 
     var body: some View {
         // IMPORTANT: Explicit alignment: .center prevents NSSegmentedControl from drifting
         // below the row midline when sharing an HStack with a TextField.
         VStack(alignment: .leading, spacing: 6) {
-        HStack(alignment: .center, spacing: 8) {
-            Circle()
-                .fill(validityColor)
-                .frame(width: 6, height: 6)
+            HStack(alignment: .center, spacing: 8) {
+                Circle()
+                    .fill(validityColor)
+                    .frame(width: 6, height: 6)
+                    .accessibilityHidden(true)
 
-            // IMPORTANT: Empty first-argument + prompt: prevents Form (grouped style) from
-            // rendering the label as fixed left-side text instead of placeholder text.
-            TextField(
-                text: $pattern.value,
-                prompt: Text(String(localized: "setting.chapter_regex.placeholder")),
-                label: { EmptyView() }
-            )
-            .font(.system(size: 12, design: .monospaced))
-            .focused($fieldFocused)
-            .frame(maxWidth: .infinity)
+                // IMPORTANT: Empty first-argument + prompt: prevents Form (grouped style) from
+                // rendering the label as fixed left-side text instead of placeholder text.
+                TextField(
+                    text: $pattern.value,
+                    prompt: Text(String(localized: "setting.chapter_regex.placeholder")),
+                    label: { EmptyView() }
+                )
+                .font(.system(size: 12, design: .monospaced))
+                .accessibilityLabel(String(localized: "setting.chapter_regex.rule"))
+                .focused($fieldFocused)
+                .frame(maxWidth: .infinity)
 
-            // IMPORTANT: .labelsHidden() suppresses implicit label space that would push
-            // the segmented control out of vertical alignment; .frame(width:) caps its width
-            // without fixedSize() to avoid the control expanding the row unexpectedly.
-            Picker(selection: $pattern.level) {
-                Text("L1").tag(1)
-                Text("L2").tag(2)
-                Text("L3").tag(3)
-            } label: {
-                EmptyView()
+                // IMPORTANT: .labelsHidden() suppresses implicit label space that would push
+                // the segmented control out of vertical alignment; .frame(width:) caps its width
+                // without fixedSize() to avoid the control expanding the row unexpectedly.
+                Picker(selection: $pattern.level) {
+                    Text("L1").tag(1)
+                    Text("L2").tag(2)
+                    Text("L3").tag(3)
+                } label: {
+                    Text(String(localized: "setting.chapter_regex.level"))
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 90)
+                .help(String(localized: "setting.chapter_regex.level_help"))
+
+                Button(role: .destructive, action: onDelete) {
+                    Image(systemName: "minus.circle.fill")
+                        .foregroundStyle(.red)
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.borderless)
+                .help(String(localized: "button.remove"))
+                .accessibilityLabel(String(localized: "setting.chapter_regex.remove"))
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .frame(width: 90)
-            .help(String(localized: "setting.chapter_regex.level_help"))
-
-            Button(role: .destructive, action: onDelete) {
-                Image(systemName: "minus.circle.fill")
-                    .foregroundStyle(.red.opacity(0.65))
+            if let validationError {
+                Label(String(localized: "setting.chapter_regex.invalid") + " " + validationError,
+                      systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .buttonStyle(.plain)
-        }
-        if let validationError {
-            Label(String(localized: "setting.chapter_regex.invalid") + " " + validationError,
-                  systemImage: "exclamationmark.triangle")
-                .font(.caption)
-                .foregroundStyle(.red)
-                .fixedSize(horizontal: false, vertical: true)
-        }
         }
     }
 }

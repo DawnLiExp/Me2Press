@@ -29,7 +29,7 @@ struct CoverDropZone: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .contentShape(RoundedRectangle(cornerRadius: 10))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.borderless)
         .accessibilityLabel(String(localized: "cover.choose"))
         .help(coverURL?.path ?? String(localized: "cover.choose"))
         .overlay(alignment: .topTrailing) {
@@ -40,7 +40,7 @@ struct CoverDropZone: View {
                         .padding(5)
                         .background(.black.opacity(0.55), in: Circle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.borderless)
                 .help(String(localized: "cover.remove"))
                 .accessibilityLabel(String(localized: "cover.remove"))
                 .padding(4)

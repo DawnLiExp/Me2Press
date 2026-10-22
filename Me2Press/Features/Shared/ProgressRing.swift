@@ -9,6 +9,7 @@
 import SwiftUI
 
 struct ProgressRing: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let progress: Double // 0.0 – 1.0
     var isCompleted: Bool = false
     var lineWidth: CGFloat = 12
@@ -38,16 +39,8 @@ struct ProgressRing: View {
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
-                // Two separate animations so each value gets its own spring tuning:
-                // progress arc uses a slower, softer spring; completion fill uses a tighter one.
-                .animation(
-                    .spring(response: 0.45, dampingFraction: 0.82),
-                    value: clamped
-                )
-                .animation(
-                    .spring(response: 0.38, dampingFraction: 0.9),
-                    value: isCompleted
-                )
+                .animation(reduceMotion ? nil : .linear(duration: 0.15), value: clamped)
+
         }
         .frame(width: size, height: size)
     }

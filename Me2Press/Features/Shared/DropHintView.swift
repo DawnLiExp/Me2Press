@@ -19,7 +19,7 @@ struct DropHintView: View {
     }
 
     private var titleColor: Color {
-        isTargeted ? Color.primary : Color(nsColor: .tertiaryLabelColor)
+        isTargeted ? Color.primary : Color.secondary
     }
 
     var body: some View {
@@ -37,10 +37,12 @@ struct DropHintView: View {
 
                 Text(subtitle)
                     .font(.system(size: 12))
-                    .foregroundStyle(.quaternary)
+                    .foregroundStyle(.secondary)
             }
 
             Spacer()
         }
+        .multilineTextAlignment(.center)
+        .padding(.horizontal, 16)
     }
 }

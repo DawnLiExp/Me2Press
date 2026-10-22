@@ -88,9 +88,8 @@ struct SidebarView: View {
                 openSettings()
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: settings.isKindleGenReady ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    Image(systemName: settings.kindleGenStatus == .checking ? "clock" : settings.isKindleGenReady ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                         .foregroundStyle(settings.isKindleGenReady ? .green : .orange)
-                        .symbolEffect(.pulse, isActive: !settings.isKindleGenReady)
                         .font(.system(size: 12, weight: .bold))
 
                     Text(settings.kindleGenStatusText)
@@ -98,6 +97,7 @@ struct SidebarView: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.tail)
+                        .help(settings.kindleGenStatusText)
 
                     Spacer()
 
@@ -111,7 +111,7 @@ struct SidebarView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .padding(.horizontal, 12)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.borderless)
             .padding(.bottom, 20)
 
             // MARK: Tab navigation
@@ -136,7 +136,7 @@ struct SidebarView: View {
                 Divider()
                     .opacity(0.5)
 
-                Toggle(isOn: $showLog.animation(.spring(duration: 0.3))) {
+                Toggle(isOn: $showLog) {
                     Label(String(localized: "label.show_logs"), systemImage: "terminal")
                         .font(.system(size: 12, weight: .medium))
                 }
@@ -185,6 +185,7 @@ private struct SidebarTabButton: View {
             )
             .foregroundStyle(isSelected ? Color.accentColor : .primary.opacity(0.8))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.borderless)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

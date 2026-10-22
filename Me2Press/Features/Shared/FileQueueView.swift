@@ -29,6 +29,7 @@ struct FileQueueView: View {
     let onDropped: ([URL]) async -> FileQueueDropSummary
     var onMove: ((IndexSet, Int) -> Void)?
 
+    @State private var selection: Set<URL> = []
     @State private var showImporter = false
     @State private var feedback: String?
     @State private var importTask: Task<Void, Never>?
@@ -76,15 +77,21 @@ struct FileQueueView: View {
                             .padding(.bottom, 24)
                     }
                 } else {
-                    List {
+                    List(selection: $selection) {
                         ForEach(items, id: \.self) { item in
                             FileRowView(url: item, icon: rowIcon, tint: rowTint,
                                         onRemove: { onRemove(item) }, onReveal: { onReveal(item) })
+                                .tag(item)
                                 .listRowBackground(Color.clear)
                                 .listRowSeparator(.hidden)
                                 .listRowInsets(EdgeInsets(top: 2, leading: 12, bottom: 2, trailing: 12))
                         }
                         .onMove(perform: onMove)
+                    }
+                    .onDeleteCommand {
+                        guard !isImporting else { return }
+                        for item in selection { onRemove(item) }
+                        selection.removeAll()
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
@@ -150,6 +157,7 @@ struct FileQueueView: View {
                 feedback = error.localizedDescription
             }
         }
+        .onChange(of: items) { _, current in selection.formIntersection(current) }
         .onDisappear {
             importTask?.cancel()
             importTask = nil

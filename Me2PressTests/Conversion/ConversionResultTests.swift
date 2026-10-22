@@ -22,6 +22,32 @@ struct ConversionResultTests {
         #expect(progress.succeededCount == 0)
     }
 
+    @Test("Real EPUB output is retained alongside a failed item", arguments: [1, 2])
+    func realMixedBatch(concurrency: Int) async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = directory.appendingPathComponent("valid.txt")
+        try "第一章 测试\n这是正文。".write(to: source, atomically: true, encoding: .utf8)
+        let missing = directory.appendingPathComponent("missing.txt")
+        let jobs = [source, missing].map {
+            ConversionJob.text(TextConversionJob(sourceURL: $0, outputFormat: .epub,
+                indentParagraph: true, keepLineBreaks: false, coverImageURL: nil,
+                chapterPatterns: [], authorName: "Test", kindlegenURL: nil))
+        }
+        let progress = ConversionProgress()
+        let presenter = ConversionEventPresenter(progress: progress, logger: LogManager(), simulator: ConversionProgressSimulator())
+        await ConversionCoordinator().runBatch(jobs: jobs, maxConcurrency: concurrency) { event in
+            await presenter.handle(event)
+        }
+        #expect(progress.outcome == .failure)
+        #expect(progress.succeededCount == 1)
+        #expect(progress.failures.map(\.sourceURL) == [missing])
+        let output = try #require(progress.outputURLs.first)
+        #expect(output.lastPathComponent == "valid.epub")
+        #expect(try Data(contentsOf: output).starts(with: [0x50, 0x4B]))
+    }
+
     @Test("Mixed results retain exact failed sources and successful outputs")
     func mixedResults() {
         let progress = ConversionProgress()

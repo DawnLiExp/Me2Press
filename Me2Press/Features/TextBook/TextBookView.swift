@@ -18,7 +18,6 @@ struct TextBookView: View {
                 ConversionProgressView(progress: viewModel.progress, isStopping: viewModel.isStopping) {
                     viewModel.stopConversion()
                 }
-                .transition(.opacity)
             } else if viewModel.progress.isFinished {
                 ConversionResultView(progress: viewModel.progress, requiresKindleGen: viewModel.outputFormat == .azw3, onDismiss: {
                     viewModel.progress.reset()
@@ -27,10 +26,8 @@ struct TextBookView: View {
                 })
             } else {
                 TextBookFileListView(viewModel: viewModel, isTargeted: $isTargeted)
-                    .transition(.opacity)
-            }
+                }
         }
-        .animation(.easeInOut(duration: 0.28), value: viewModel.isConverting)
     }
 }
 
@@ -69,27 +66,14 @@ private struct TextBookFileListView: View {
                                 .font(.system(size: 13))
                                 .foregroundStyle(.secondary)
 
-                            HStack(spacing: 4) {
+                            Picker(String(localized: "format.output"), selection: $viewModel.outputFormat) {
                                 ForEach(OutputFormat.allCases) { format in
-                                    let isSelected = viewModel.outputFormat == format
-                                    Button {
-                                        withAnimation(.easeInOut(duration: 0.15)) {
-                                            viewModel.outputFormat = format
-                                        }
-                                    } label: {
-                                        Text(format.rawValue)
-                                            .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
-                                            .foregroundStyle(isSelected ? .white : .secondary)
-                                            .padding(.horizontal, 14)
-                                            .padding(.vertical, 5)
-                                            .background(
-                                                Capsule()
-                                                    .fill(isSelected ? Color.accentColor : Color.primary.opacity(0.06))
-                                            )
-                                    }
-                                    .buttonStyle(.plain)
+                                    Text(format.rawValue).tag(format)
                                 }
                             }
+                            .pickerStyle(.segmented)
+                            .labelsHidden()
+
                         }
 
                         Toggle(String(localized: "option.indent"), isOn: $viewModel.indentParagraph)

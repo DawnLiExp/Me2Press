@@ -29,9 +29,18 @@ struct FileRowView: View {
                 .font(.system(size: 14))
                 .animation(.easeInOut(duration: 0.15), value: isHovered)
 
-            Text(url.lastPathComponent)
-                .font(.system(size: 13, weight: .medium))
-                .lineLimit(1)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(url.lastPathComponent)
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Text(url.deletingLastPathComponent().path)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            .help(url.path)
 
             Spacer()
 
@@ -39,9 +48,13 @@ struct FileRowView: View {
                 Image(systemName: "xmark.circle.fill")
                     .foregroundStyle(removeButtonColor)
                     .font(.system(size: 14))
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
                     .animation(.easeInOut(duration: 0.15), value: isHovered)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.borderless)
+            .help(String(localized: "button.remove"))
+            .accessibilityLabel(String(localized: "queue.remove_item \(url.lastPathComponent)"))
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 8)

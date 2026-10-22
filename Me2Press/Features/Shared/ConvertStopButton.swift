@@ -1,15 +1,5 @@
-//
-//  ConvertStopButton.swift
-//  Me2Press
-//
-//  Shared Convert / Stop toggle button used across all conversion tabs.
-//
-
 import SwiftUI
 
-/// Dual-state Convert / Stop button.
-/// - Idle: blue "Convert", can be disabled via `isDisabled`.
-/// - Converting: red "Stop", always tappable.
 struct ConvertStopButton: View {
     let isConverting: Bool
     let isDisabled: Bool
@@ -18,32 +8,18 @@ struct ConvertStopButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 6) {
-                if isConverting {
-                    Image(systemName: "stop.fill")
-                        .font(.system(size: 13, weight: .bold))
-                } else {
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 14, weight: .bold))
-                }
-
-                Text(isStopping ? String(localized: "progress.stopping") : isConverting
-                    ? String(localized: "button.stop")
-                    : String(localized: "button.convert"))
-                    .font(.system(size: 15, weight: .bold))
-            }
-            .frame(width: 130, height: 40)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(isConverting ? Color.red.opacity(0.85) : Color.accentColor)
-            )
-            .foregroundStyle(.white)
-            .opacity(isDisabled ? 0.5 : 1.0)
+            Label(title, systemImage: isConverting ? "stop.fill" : "arrow.triangle.2.circlepath")
+                .font(.headline)
+                .frame(minWidth: 110, minHeight: 24)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.borderedProminent)
+        .controlSize(.large)
+        .tint(isConverting ? .red : .accentColor)
         .disabled(isDisabled)
-        // States are mutually exclusive — Stop is only shown during conversion, Convert
-        // only when idle — so rapid double-tap cannot trigger both actions simultaneously.
-        .animation(.easeInOut(duration: 0.15), value: isConverting)
+    }
+
+    private var title: String {
+        if isStopping { return String(localized: "progress.stopping") }
+        return String(localized: isConverting ? "button.stop" : "button.convert")
     }
 }

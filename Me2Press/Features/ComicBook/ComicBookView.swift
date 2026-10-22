@@ -20,7 +20,6 @@ struct ComicBookView: View {
                 ConversionProgressView(progress: viewModel.progress, isStopping: viewModel.isStopping) {
                     viewModel.stopConversion()
                 }
-                .transition(.opacity)
             } else if viewModel.progress.isFinished {
                 ConversionResultView(progress: viewModel.progress, requiresKindleGen: true, onDismiss: {
                     viewModel.progress.reset()
@@ -29,10 +28,8 @@ struct ComicBookView: View {
                 })
             } else {
                 ComicFolderListView(viewModel: viewModel, isTargeted: $isTargeted)
-                    .transition(.opacity)
-            }
+                }
         }
-        .animation(.easeInOut(duration: 0.28), value: viewModel.isConverting)
     }
 }
 
@@ -104,6 +101,7 @@ private struct ComicFolderListView: View {
                         set: { settings.maxConcurrency = Int($0.rounded()) }
                     ), in: Double(AppSettings.concurrencyRange.lowerBound) ... Double(AppSettings.concurrencyRange.upperBound), step: 1)
                         .labelsHidden()
+                    .accessibilityLabel(String(localized: "setting.concurrency.label"))
                         .controlSize(.small)
                         .transaction { $0.animation = nil }
                 }

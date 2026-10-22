@@ -20,7 +20,6 @@ struct EPUBBookView: View {
                 ConversionProgressView(progress: viewModel.progress, isStopping: viewModel.isStopping) {
                     viewModel.stopConversion()
                 }
-                .transition(.opacity)
             } else if viewModel.progress.isFinished {
                 ConversionResultView(progress: viewModel.progress, requiresKindleGen: true, onDismiss: {
                     viewModel.progress.reset()
@@ -29,10 +28,8 @@ struct EPUBBookView: View {
                 })
             } else {
                 EPUBFileListView(viewModel: viewModel, isTargeted: $isTargeted)
-                    .transition(.opacity)
-            }
+                }
         }
-        .animation(.easeInOut(duration: 0.28), value: viewModel.isConverting)
     }
 }
 
