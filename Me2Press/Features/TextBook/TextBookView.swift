@@ -9,18 +9,22 @@ import UniformTypeIdentifiers
 struct TextBookView: View {
     @Environment(AppSettings.self) private var settings
     @Environment(LogManager.self) private var logger
-    @State private var viewModel = TextBookViewModel()
+    let viewModel: TextBookViewModel
     @State private var isTargeted = false
-
-    init() {}
 
     var body: some View {
         Group {
             if viewModel.isConverting {
-                ConversionProgressView(progress: viewModel.progress) {
+                ConversionProgressView(progress: viewModel.progress, isStopping: viewModel.isStopping) {
                     viewModel.stopConversion()
                 }
                 .transition(.opacity)
+            } else if viewModel.progress.isFinished {
+                ConversionResultView(progress: viewModel.progress, onDismiss: {
+                    viewModel.progress.reset()
+                }, onRetry: {
+                    viewModel.retryFailed(appSettings: settings, logger: logger)
+                })
             } else {
                 TextBookFileListView(viewModel: viewModel, isTargeted: $isTargeted)
                     .transition(.opacity)

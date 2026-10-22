@@ -10,6 +10,9 @@ import SwiftUI
 struct MainWindowView: View {
     @State private var selectedTab: AppTab = .comic
     @State private var showLog: Bool = true
+    @State private var textModel = TextBookViewModel()
+    @State private var comicModel = ComicBookViewModel()
+    @State private var epubModel = EPUBBookViewModel()
 
     var body: some View {
         HStack(spacing: 0) {
@@ -27,11 +30,11 @@ struct MainWindowView: View {
             Group {
                 switch selectedTab {
                 case .textbook:
-                    TextBookView()
+                    TextBookView(viewModel: textModel)
                 case .comic:
-                    ComicBookView()
+                    ComicBookView(viewModel: comicModel)
                 case .epubbook:
-                    EPUBBookView()
+                    EPUBBookView(viewModel: epubModel)
                 }
             }
             // Cap content width so the log panel always receives the remaining space;

@@ -55,7 +55,15 @@ final class ConversionEventPresenter {
             simulator.cancel()
             progress.markFileCompleted(name: name)
 
-        case .itemFailed(_, let errorDescription, let recoverySuggestion):
+        case .itemSucceeded:
+            progress.succeededCount += 1
+
+        case .outputCreated(let url):
+            progress.outputURLs.append(url)
+
+        case .itemFailed(let sourceURL, let name, let errorDescription, let recoverySuggestion):
+            let details = [errorDescription, recoverySuggestion].compactMap { $0 }.joined(separator: "\n")
+            progress.failures.append(.init(sourceURL: sourceURL, message: "[\(name)] \(details)"))
             logger.log(level: .error, errorDescription)
             if let recoverySuggestion {
                 logger.log(level: .warn, recoverySuggestion)
@@ -67,7 +75,11 @@ final class ConversionEventPresenter {
         case .batchCompleted(let totalFiles, let elapsed):
             simulator.cancel()
             progress.markBatchCompleted()
-            logger.log(level: .info, String(localized: "log.all_items_done \(totalFiles) \(elapsed)"))
+            if progress.isCompleted {
+                logger.log(level: .info, String(localized: "log.all_items_done \(totalFiles) \(elapsed)"))
+            } else {
+                logger.log(level: .warn, String(localized: "result.summary \(progress.succeededCount) \(progress.failures.count)"))
+            }
 
         case .batchCancelled:
             simulator.cancel()

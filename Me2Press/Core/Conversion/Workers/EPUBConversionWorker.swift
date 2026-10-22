@@ -68,5 +68,6 @@ enum EPUBConversionWorker {
             since: t,
             eventSink: eventSink
         )
+        await eventSink(.outputCreated(azw3Path))
     }
 }

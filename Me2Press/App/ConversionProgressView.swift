@@ -11,6 +11,7 @@ import SwiftUI
 
 struct ConversionProgressView: View {
     let progress: ConversionProgress
+    var isStopping = false
     let onStop: () -> Void
 
     var body: some View {
@@ -84,6 +85,7 @@ struct ConversionProgressView: View {
     // MARK: - Computed helpers
 
     private var stepText: String {
+        if isStopping { return String(localized: "progress.stopping") }
         if progress.isCompleted {
             return String(localized: "progress.done")
         }
@@ -131,7 +133,8 @@ struct ConversionProgressView: View {
             if !progress.isCompleted {
                 ConvertStopButton(
                     isConverting: true,
-                    isDisabled: false,
+                    isDisabled: isStopping,
+                    isStopping: isStopping,
                     action: onStop
                 )
                 .transition(.opacity)

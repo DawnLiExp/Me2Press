@@ -22,7 +22,9 @@ enum ConversionEvent: Sendable {
     case simulation(from: Double, to: Double, step: String, rate: Double)
     case volumeLabel(String)
     case itemCompleted(name: String)
-    case itemFailed(name: String, errorDescription: String, recoverySuggestion: String?)
+    case itemSucceeded
+    case outputCreated(URL)
+    case itemFailed(sourceURL: URL, name: String, errorDescription: String, recoverySuggestion: String?)
     case log(level: ConversionLogLevel, message: String)
     case batchCompleted(totalFiles: Int, elapsed: String)
     case batchCancelled

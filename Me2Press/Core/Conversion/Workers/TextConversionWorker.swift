@@ -159,9 +159,11 @@ enum TextConversionWorker {
                 since: t,
                 eventSink: eventSink
             )
+            await eventSink(.outputCreated(azw3Path))
         } else {
             let targetEpubURL = outputFolder.appendingPathComponent("\(name).epub")
             try ConversionWorkerSupport.moveReplacingExisting(from: tempEpubURL, to: targetEpubURL)
+            await eventSink(.outputCreated(targetEpubURL))
         }
     }
 }

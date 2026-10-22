@@ -13,6 +13,7 @@ import SwiftUI
 struct ConvertStopButton: View {
     let isConverting: Bool
     let isDisabled: Bool
+    var isStopping = false
     let action: () -> Void
 
     var body: some View {
@@ -26,7 +27,7 @@ struct ConvertStopButton: View {
                         .font(.system(size: 14, weight: .bold))
                 }
 
-                Text(isConverting
+                Text(isStopping ? String(localized: "progress.stopping") : isConverting
                     ? String(localized: "button.stop")
                     : String(localized: "button.convert"))
                     .font(.system(size: 15, weight: .bold))

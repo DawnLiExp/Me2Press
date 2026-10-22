@@ -22,6 +22,7 @@ enum OutputFormat: String, CaseIterable, Identifiable, Sendable {
 class TextBookViewModel {
     var items: [URL] = []
     var isConverting = false
+    var isStopping = false
     let progress = ConversionProgress()
     private let progressSimulator = ConversionProgressSimulator()
 
@@ -68,7 +69,15 @@ class TextBookViewModel {
         items.move(fromOffsets: source, toOffset: destination)
     }
 
+    func retryFailed(appSettings: AppSettings, logger: LogManager) {
+        guard !isConverting else { return }
+        items = progress.failures.map(\.sourceURL)
+        startConversion(appSettings: appSettings, logger: logger)
+    }
+
     func stopConversion() {
+        guard isConverting, !isStopping else { return }
+        isStopping = true
         presenter?.cancelTransientWork()
         conversionTask?.cancel()
     }
@@ -103,6 +112,7 @@ class TextBookViewModel {
 
         progress.beginBatch(totalFiles: jobs.count)
         progress.isConcurrent = maxConcurrency > 1
+        isStopping = false
         isConverting = true
         self.presenter = presenter
         conversionTask = Task { [weak self] in
@@ -116,6 +126,7 @@ class TextBookViewModel {
                 self?.presenter?.cancelTransientWork()
                 self?.presenter = nil
                 self?.isConverting = false
+                self?.isStopping = false
                 self?.conversionTask = nil
             }
 
@@ -124,10 +135,6 @@ class TextBookViewModel {
                 maxConcurrency: maxConcurrency,
                 eventSink: sink
             )
-
-            if !Task.isCancelled, progress.isCompleted {
-                try? await Task.sleep(for: .seconds(1))
-            }
         }
     }
 }

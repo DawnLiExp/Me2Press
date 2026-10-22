@@ -34,6 +34,14 @@ enum ConversionJob: Sendable {
     case epub(EPUBConversionJob)
     case comic(ComicConversionJob)
 
+    nonisolated var sourceURL: URL {
+        switch self {
+        case .text(let job): job.sourceURL
+        case .epub(let job): job.sourceURL
+        case .comic(let job): job.sourceFolderURL
+        }
+    }
+
     nonisolated var displayName: String {
         switch self {
         case .text(let job):

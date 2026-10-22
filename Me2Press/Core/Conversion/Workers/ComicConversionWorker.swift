@@ -42,6 +42,7 @@ enum ComicConversionWorker {
             )
         }
 
+        var volumeErrors: [String] = []
         for (volIdx, volumeImages) in volumes.enumerated() {
             try Task.checkCancellation()
 
@@ -141,6 +142,7 @@ enum ComicConversionWorker {
 
                 let outputURL = outputFolder.appendingPathComponent("\(volName).mobi")
                 try ConversionWorkerSupport.moveReplacingExisting(from: mobiPath, to: outputURL)
+                await eventSink(.outputCreated(outputURL))
                 await ConversionWorkerSupport.emitLog(
                     .info,
                     "[\(volName)] → \(outputURL.lastPathComponent)",
@@ -150,6 +152,7 @@ enum ComicConversionWorker {
                 throw CancellationError()
             } catch {
                 if totalVolumes > 1 {
+                    volumeErrors.append("[\(volName)] \(error.localizedDescription)")
                     await ConversionWorkerSupport.emitLog(
                         .error,
                         "[\(volName)] ❌ \(error.localizedDescription)",
@@ -162,6 +165,9 @@ enum ComicConversionWorker {
         }
 
         await eventSink(.volumeLabel(""))
+        if !volumeErrors.isEmpty {
+            throw VolumeConversionError(details: volumeErrors.joined(separator: "\n"))
+        }
     }
 
     private nonisolated static func outputName(base: String, volumeIndex: Int, totalVolumes: Int) -> String {
@@ -169,4 +175,9 @@ enum ComicConversionWorker {
         let pad = totalVolumes >= 10 ? 2 : 1
         return "\(base) [Vol.\(String(format: "%0\(pad)d", volumeIndex))]"
     }
+}
+
+private struct VolumeConversionError: LocalizedError {
+    let details: String
+    nonisolated var errorDescription: String? { details }
 }

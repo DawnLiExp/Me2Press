@@ -1,6 +1,22 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "AZW3" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AZW3"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AZW3"
+          }
+        }
+      }
+    },
     "About Me2Press" : {
       "localizations" : {
         "en" : {
@@ -17,18 +33,106 @@
         }
       }
     },
-    "AZW3" : {
+    "KindleGen Configuration" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "AZW3"
+            "value" : "KindleGen Configuration"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "AZW3"
+            "value" : "KindleGen 配置"
+          }
+        }
+      }
+    },
+    "L1" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L1"
+          }
+        }
+      }
+    },
+    "L2" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L2"
+          }
+        }
+      }
+    },
+    "L3" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L3"
+          }
+        }
+      }
+    },
+    "MOBI" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MOBI"
+          }
+        }
+      }
+    },
+    "Me2Press" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me2Press"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me2Press"
+          }
+        }
+      }
+    },
+    "Select kindlegen executable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select kindlegen executable"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择 kindlegen 可执行文件"
+          }
+        }
+      }
+    },
+    "Select..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择..."
           }
         }
       }
@@ -395,22 +499,6 @@
         }
       }
     },
-    "KindleGen Configuration" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "KindleGen Configuration"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "KindleGen 配置"
-          }
-        }
-      }
-    },
     "kindlegen Path" : {
       "localizations" : {
         "en" : {
@@ -423,36 +511,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "kindlegen 路径"
-          }
-        }
-      }
-    },
-    "L1" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L1"
-          }
-        }
-      }
-    },
-    "L2" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L2"
-          }
-        }
-      }
-    },
-    "L3" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L3"
           }
         }
       }
@@ -982,32 +1040,6 @@
         }
       }
     },
-    "Me2Press" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Me2Press"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Me2Press"
-          }
-        }
-      }
-    },
-    "MOBI" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MOBI"
-          }
-        }
-      }
-    },
     "option.indent" : {
       "localizations" : {
         "en" : {
@@ -1193,6 +1225,23 @@
         }
       }
     },
+    "progress.stopping" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stopping…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在停止…"
+          }
+        }
+      }
+    },
     "progress.volume %lld %lld" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1210,34 +1259,104 @@
         }
       }
     },
-    "Select kindlegen executable" : {
+    "result.back" : {
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select kindlegen executable"
+            "value" : "Back to Queue"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "选择 kindlegen 可执行文件"
+            "value" : "返回队列"
           }
         }
       }
     },
-    "Select..." : {
+    "result.cancelled" : {
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select..."
+            "value" : "Stopped"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "选择..."
+            "value" : "已停止"
+          }
+        }
+      }
+    },
+    "result.failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finished with Errors"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "转换存在失败"
+          }
+        }
+      }
+    },
+    "result.retry" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry Failed Items"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重试失败项"
+          }
+        }
+      }
+    },
+    "result.summary %lld %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Succeeded: %1$lld · Failed: %2$lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "成功 %1$lld 项 · 失败 %2$lld 项"
+          }
+        }
+      }
+    },
+    "result.unprocessed %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unfinished: %lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未完成 %lld 项"
           }
         }
       }

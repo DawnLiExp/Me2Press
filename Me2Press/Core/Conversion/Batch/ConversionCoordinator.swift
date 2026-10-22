@@ -98,6 +98,7 @@ actor ConversionCoordinator {
                 try await ComicConversionWorker.run(job: comicJob, eventSink: eventSink)
             }
 
+            await eventSink(.itemSucceeded)
             let totalStr = ConversionWorkerSupport.totalTimeString(since: fileStart)
             await eventSink(.log(level: .info, message: String(localized: "log.done \(name)") + "  \(totalStr)"))
             return ItemResult(name: name, isCancelled: false)
@@ -108,6 +109,7 @@ actor ConversionCoordinator {
 
         } catch let error as Me2PressError {
             await eventSink(.itemFailed(
+                sourceURL: job.sourceURL,
                 name: name,
                 errorDescription: String(localized: "log.error \(error.localizedDescription)"),
                 recoverySuggestion: error.recoverySuggestion
@@ -116,6 +118,7 @@ actor ConversionCoordinator {
 
         } catch {
             await eventSink(.itemFailed(
+                sourceURL: job.sourceURL,
                 name: name,
                 errorDescription: String(localized: "log.error \(error.localizedDescription)"),
                 recoverySuggestion: nil

@@ -27,8 +27,20 @@ final class ConversionProgress {
     var totalFiles: Int = 0
     /// Display name of the file currently being processed (no extension).
     var currentFileName: String = ""
-    /// Briefly true when all files complete, driving the ✅ animation.
-    var isCompleted: Bool = false
+    /// Terminal outcome and retained batch results.
+    enum Outcome { case success, failure, cancelled }
+    struct Failure: Identifiable {
+        let sourceURL: URL
+        let message: String
+        var id: URL { sourceURL }
+    }
+    var outcome: Outcome?
+    var isCompleted: Bool { outcome == .success }
+    var isFinished: Bool { outcome != nil }
+    var succeededCount = 0
+    var failures: [Failure] = []
+    var outputURLs: [URL] = []
+    var unprocessedCount: Int { max(0, totalFiles - succeededCount - failures.count) }
     /// Non-empty only during multi-volume comic conversion, e.g. "Vol.1 / 3".
     var volumeLabel: String = ""
 
@@ -58,7 +70,10 @@ final class ConversionProgress {
         step = ""
         currentFileName = ""
         volumeLabel = ""
-        isCompleted = false
+        outcome = nil
+        succeededCount = 0
+        failures = []
+        outputURLs = []
         isConcurrent = false // ViewModel overrides this after calling beginBatch
     }
 
@@ -82,11 +97,11 @@ final class ConversionProgress {
 
     func markBatchCompleted() {
         value = 1.0
-        isCompleted = true
+        outcome = failures.isEmpty && succeededCount == totalFiles ? .success : .failure
     }
 
     func markBatchCancelled() {
-        isCompleted = false
+        outcome = .cancelled
         volumeLabel = ""
     }
 
