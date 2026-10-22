@@ -2,6 +2,8 @@ import SwiftUI
 
 struct ConversionResultView: View {
     let progress: ConversionProgress
+    var requiresKindleGen = true
+    @Environment(AppSettings.self) private var settings
     let onDismiss: () -> Void
     let onRetry: () -> Void
 
@@ -36,11 +38,13 @@ struct ConversionResultView: View {
                     NSWorkspace.shared.activateFileViewerSelecting(progress.outputURLs)
                 }
             }
+            KindleGenRequirementView(isRequired: requiresKindleGen)
             HStack {
                 Button(String(localized: "result.back"), action: onDismiss)
                 if !progress.failures.isEmpty {
                     Button(String(localized: "result.retry"), action: onRetry)
                         .buttonStyle(.borderedProminent)
+                        .disabled(requiresKindleGen && !settings.isKindleGenReady)
                 }
             }
         }

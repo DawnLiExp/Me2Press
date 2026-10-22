@@ -10,6 +10,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(AppSettings.self) private var settings
+    @State private var patternsBeforeRestore: [ChapterPattern]?
 
     var body: some View {
         Form {
@@ -22,6 +23,9 @@ struct SettingsView: View {
         .frame(width: 520)
         .fixedSize(horizontal: false, vertical: true)
         .padding(.bottom, 10)
+        .onChange(of: settings.chapterPatterns) { _, current in
+            if current != AppSettings.defaultChapterPatterns { patternsBeforeRestore = nil }
+        }
     }
 
     // MARK: - KindleGen Section
@@ -48,7 +52,7 @@ struct SettingsView: View {
                 HStack(spacing: 4) {
                     Image(systemName: settings.isKindleGenReady ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                         .foregroundStyle(settings.isKindleGenReady ? .green : .red)
-                    Text(settings.isKindleGenReady ? String(localized: "status.kindlegen.ready") : String(localized: "status.kindlegen.missing"))
+                    Text(settings.kindleGenStatusText)
                 }
             }
         } header: {
@@ -115,12 +119,19 @@ struct SettingsView: View {
                 Spacer()
 
                 Button {
+                    patternsBeforeRestore = settings.chapterPatterns
                     settings.chapterPatterns = AppSettings.defaultChapterPatterns
                 } label: {
                     Text(String(localized: "setting.chapter_regex.restore"))
                         .font(.system(size: 12))
                 }
                 .foregroundStyle(.secondary)
+            }
+            if let previous = patternsBeforeRestore {
+                Button(String(localized: "setting.chapter_regex.undo_restore")) {
+                    settings.chapterPatterns = previous
+                    patternsBeforeRestore = nil
+                }
             }
         } header: {
             // IMPORTANT: The regex hint lives in the section header tooltip rather than as inline
@@ -196,6 +207,14 @@ private struct PatternRow: View {
     // when a TextField shares a Form row with other interactive controls.
     @FocusState private var fieldFocused: Bool
 
+    private var validationError: String? {
+        guard !pattern.value.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
+        do {
+            _ = try NSRegularExpression(pattern: pattern.value)
+            return nil
+        } catch { return error.localizedDescription }
+    }
+
     private var validityColor: Color {
         if pattern.value.isEmpty { return .secondary.opacity(0.35) }
         let valid = (try? NSRegularExpression(pattern: pattern.value)) != nil
@@ -205,6 +224,7 @@ private struct PatternRow: View {
     var body: some View {
         // IMPORTANT: Explicit alignment: .center prevents NSSegmentedControl from drifting
         // below the row midline when sharing an HStack with a TextField.
+        VStack(alignment: .leading, spacing: 6) {
         HStack(alignment: .center, spacing: 8) {
             Circle()
                 .fill(validityColor)
@@ -241,6 +261,14 @@ private struct PatternRow: View {
                     .foregroundStyle(.red.opacity(0.65))
             }
             .buttonStyle(.plain)
+        }
+        if let validationError {
+            Label(String(localized: "setting.chapter_regex.invalid") + " " + validationError,
+                  systemImage: "exclamationmark.triangle")
+                .font(.caption)
+                .foregroundStyle(.red)
+                .fixedSize(horizontal: false, vertical: true)
+        }
         }
     }
 }

@@ -93,7 +93,7 @@ struct SidebarView: View {
                         .symbolEffect(.pulse, isActive: !settings.isKindleGenReady)
                         .font(.system(size: 12, weight: .bold))
 
-                    Text(settings.isKindleGenReady ? String(localized: "status.kindlegen.ready") : String(localized: "status.kindlegen.missing"))
+                    Text(settings.kindleGenStatusText)
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)

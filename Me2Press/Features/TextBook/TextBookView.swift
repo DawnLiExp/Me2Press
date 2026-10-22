@@ -20,7 +20,7 @@ struct TextBookView: View {
                 }
                 .transition(.opacity)
             } else if viewModel.progress.isFinished {
-                ConversionResultView(progress: viewModel.progress, onDismiss: {
+                ConversionResultView(progress: viewModel.progress, requiresKindleGen: viewModel.outputFormat == .azw3, onDismiss: {
                     viewModel.progress.reset()
                 }, onRetry: {
                     viewModel.retryFailed(appSettings: settings, logger: logger)
@@ -117,6 +117,8 @@ private struct TextBookFileListView: View {
             FileQueueView(
                 items: viewModel.items,
                 isTargeted: $isTargeted,
+                isImporting: $viewModel.isImporting,
+                inputTypes: [.plainText],
                 headerLabel: "label.pending_files",
                 countLabel: "label.books_count",
                 rowIcon: "doc.text.fill",
@@ -132,13 +134,16 @@ private struct TextBookFileListView: View {
                 onMove: viewModel.move
             )
 
+            KindleGenRequirementView(isRequired: viewModel.outputFormat == .azw3)
+                .padding(.horizontal, 24)
+
             // ── Convert button ─────────────────────────────────────────────
 
             HStack {
                 Spacer()
                 ConvertStopButton(
                     isConverting: false,
-                    isDisabled: viewModel.items.isEmpty ||
+                    isDisabled: viewModel.isImporting || viewModel.items.isEmpty ||
                         (viewModel.outputFormat == .azw3 && !settings.isKindleGenReady)
                 ) {
                     viewModel.startConversion(appSettings: settings, logger: logger)
@@ -146,67 +151,6 @@ private struct TextBookFileListView: View {
                 Spacer()
             }
             .padding(24)
-        }
-    }
-}
-
-// MARK: - CoverDropZone
-
-private struct CoverDropZone: View {
-    @Binding var coverURL: URL?
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.primary.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.1), style: StrokeStyle(lineWidth: 1, dash: [4]))
-                )
-
-            if let url = coverURL, let image = NSImage(contentsOf: url) {
-                ZStack(alignment: .topTrailing) {
-                    Image(nsImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 100, height: 140)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-                    Button {
-                        withAnimation { coverURL = nil }
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.white)
-                            .background(Circle().fill(Color.black.opacity(0.5)))
-                            .font(.system(size: 16))
-                    }
-                    .buttonStyle(.plain)
-                    .padding(4)
-                }
-            } else {
-                VStack(spacing: 8) {
-                    Image(systemName: "photo.badge.plus")
-                        .font(.system(size: 20))
-                        .foregroundStyle(.tertiary)
-                    Text(String(localized: "label.custom_cover"))
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.tertiary)
-                }
-            }
-        }
-        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
-            Task { @MainActor in
-                for provider in providers {
-                    if let url = try? await loadFileURL(from: provider),
-                       ["jpg", "jpeg", "png"].contains(url.pathExtension.lowercased())
-                    {
-                        withAnimation { coverURL = url }
-                        // Accept only the first valid image; ignore subsequent items in the drop.
-                        break
-                    }
-                }
-            }
-            return true
         }
     }
 }

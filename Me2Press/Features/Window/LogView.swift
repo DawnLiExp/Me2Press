@@ -10,7 +10,8 @@ import SwiftUI
 struct LogView: View {
     @Environment(LogManager.self) private var logger
 
-    init() {}
+    @State private var followsLatest = true
+    @State private var userIsScrolling = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -63,11 +64,29 @@ struct LogView: View {
                     .padding(12)
                 }
                 .background(Color(NSColor.windowBackgroundColor).opacity(0.8))
-                .onChange(of: logger.entries.count) { _, _ in
-                    if let last = logger.entries.last {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            proxy.scrollTo(last.id, anchor: .bottom)
+                .onScrollPhaseChange { _, phase in
+                    userIsScrolling = phase == .interacting || phase == .decelerating
+                }
+                .onScrollGeometryChange(for: Bool.self) { geometry in
+                    geometry.contentSize.height - geometry.visibleRect.maxY < 40
+                } action: { _, nearBottom in
+                    if userIsScrolling || nearBottom { followsLatest = nearBottom }
+                }
+                .onChange(of: logger.entries.last?.id) { _, _ in
+                    if followsLatest, !userIsScrolling, let last = logger.entries.last {
+                        proxy.scrollTo(last.id, anchor: .bottom)
+                    }
+                }
+                .onAppear {
+                    if let last = logger.entries.last { proxy.scrollTo(last.id, anchor: .bottom) }
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    if !followsLatest {
+                        Button(String(localized: "log.latest")) {
+                            followsLatest = true
+                            if let last = logger.entries.last { proxy.scrollTo(last.id, anchor: .bottom) }
                         }
+                        .padding(12)
                     }
                 }
             }
@@ -78,7 +97,7 @@ struct LogView: View {
                 Button(action: logger.copyAll) {
                     Label(LocalizedStringResource("button.copy_log"), systemImage: "doc.on.doc")
                 }
-                .buttonStyle(.plain)
+                .disabled(logger.entries.isEmpty)
                 .foregroundStyle(.secondary)
                 .font(.system(size: 11))
 
@@ -87,7 +106,7 @@ struct LogView: View {
                 Button(action: logger.clear) {
                     Label(LocalizedStringResource("button.clear_log"), systemImage: "trash")
                 }
-                .buttonStyle(.plain)
+                .disabled(logger.entries.isEmpty)
                 .foregroundStyle(.secondary)
                 .font(.system(size: 11))
             }

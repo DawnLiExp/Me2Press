@@ -22,7 +22,7 @@ struct ComicBookView: View {
                 }
                 .transition(.opacity)
             } else if viewModel.progress.isFinished {
-                ConversionResultView(progress: viewModel.progress, onDismiss: {
+                ConversionResultView(progress: viewModel.progress, requiresKindleGen: true, onDismiss: {
                     viewModel.progress.reset()
                 }, onRetry: {
                     viewModel.retryFailed(appSettings: settings, logger: logger)
@@ -127,6 +127,8 @@ private struct ComicFolderListView: View {
             FileQueueView(
                 items: viewModel.items,
                 isTargeted: $isTargeted,
+                isImporting: $viewModel.isImporting,
+                inputTypes: [.folder],
                 headerLabel: "label.pending_folders",
                 countLabel: "label.folders_count",
                 headerTooltip: "label.comic_folder_rule",
@@ -148,13 +150,16 @@ private struct ComicFolderListView: View {
                 onMove: viewModel.move
             )
 
+            KindleGenRequirementView(isRequired: true)
+                .padding(.horizontal, 24)
+
             // ── Convert button ─────────────────────────────────────────────
 
             HStack {
                 Spacer()
                 ConvertStopButton(
                     isConverting: false,
-                    isDisabled: viewModel.items.isEmpty || !settings.isKindleGenReady
+                    isDisabled: viewModel.isImporting || viewModel.items.isEmpty || !settings.isKindleGenReady
                 ) {
                     viewModel.startConversion(appSettings: settings, logger: logger)
                 }

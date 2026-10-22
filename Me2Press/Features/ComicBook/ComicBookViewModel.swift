@@ -14,6 +14,7 @@ class ComicBookViewModel {
     var items: [URL] = []
     var isConverting = false
     var isStopping = false
+    var isImporting = false
     let progress = ConversionProgress()
     private let progressSimulator = ConversionProgressSimulator()
 
@@ -36,6 +37,7 @@ class ComicBookViewModel {
             }
 
             let resolvedFolders = await ComicFolderResolver.resolveDroppedFolders([sourceURL])
+            guard !Task.isCancelled else { break }
             if resolvedFolders.isEmpty {
                 contentRejectedCount += 1
                 continue
@@ -85,7 +87,7 @@ class ComicBookViewModel {
     }
 
     func startConversion(appSettings: AppSettings, logger: LogManager) {
-        guard !items.isEmpty, !isConverting else { return }
+        guard !items.isEmpty, !isConverting, !isImporting else { return }
         guard appSettings.isKindleGenReady, let kindlegenURL = appSettings.kindlegenURL else {
             logger.log(level: .error, "kindlegen is not configured.")
             return

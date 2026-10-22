@@ -61,7 +61,17 @@ class AppSettings {
         }
     }
 
-    var isKindleGenReady = false
+    enum KindleGenStatus { case missing, checking, ready, invalid }
+    var kindleGenStatus: KindleGenStatus = .missing
+    var isKindleGenReady: Bool { kindleGenStatus == .ready }
+    var kindleGenStatusText: String {
+        switch kindleGenStatus {
+        case .missing: String(localized: "status.kindlegen.missing")
+        case .checking: String(localized: "status.kindlegen.checking")
+        case .ready: String(localized: "status.kindlegen.ready")
+        case .invalid: String(localized: "status.kindlegen.invalid")
+        }
+    }
     var kindlegenVersion = ""
 
     private let kindleGenProbeService = KindleGenProbeService()
@@ -159,6 +169,7 @@ class AppSettings {
         resetKindleGenStatus()
 
         guard let expectedURL else { return }
+        kindleGenStatus = .checking
 
         let probeService = kindleGenProbeService
         kindleGenProbeTask = Task { @MainActor [weak self, probeService, generation, expectedURL] in
@@ -181,13 +192,13 @@ class AppSettings {
             return
         }
 
-        isKindleGenReady = result.isReady
+        kindleGenStatus = result.isReady ? .ready : .invalid
         kindlegenVersion = result.version
         kindleGenProbeTask = nil
     }
 
     private func resetKindleGenStatus() {
-        isKindleGenReady = false
+        kindleGenStatus = .missing
         kindlegenVersion = ""
     }
 }

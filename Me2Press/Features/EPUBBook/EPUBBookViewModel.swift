@@ -14,6 +14,7 @@ class EPUBBookViewModel {
     var items: [URL] = []
     var isConverting = false
     var isStopping = false
+    var isImporting = false
     let progress = ConversionProgress()
     private let progressSimulator = ConversionProgressSimulator()
 
@@ -69,7 +70,7 @@ class EPUBBookViewModel {
     }
 
     func startConversion(appSettings: AppSettings, logger: LogManager) {
-        guard !items.isEmpty, !isConverting else { return }
+        guard !items.isEmpty, !isConverting, !isImporting else { return }
         guard appSettings.isKindleGenReady, let kindlegenURL = appSettings.kindlegenURL else {
             logger.log(level: .error, "kindlegen is not configured for AZW3 conversion.")
             return

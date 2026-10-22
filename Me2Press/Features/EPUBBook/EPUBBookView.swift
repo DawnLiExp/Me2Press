@@ -22,7 +22,7 @@ struct EPUBBookView: View {
                 }
                 .transition(.opacity)
             } else if viewModel.progress.isFinished {
-                ConversionResultView(progress: viewModel.progress, onDismiss: {
+                ConversionResultView(progress: viewModel.progress, requiresKindleGen: true, onDismiss: {
                     viewModel.progress.reset()
                 }, onRetry: {
                     viewModel.retryFailed(appSettings: settings, logger: logger)
@@ -91,6 +91,8 @@ private struct EPUBFileListView: View {
             FileQueueView(
                 items: viewModel.items,
                 isTargeted: $isTargeted,
+                isImporting: $viewModel.isImporting,
+                inputTypes: [.epub],
                 headerLabel: "label.pending_files",
                 countLabel: "label.books_count",
                 rowIcon: "book.fill",
@@ -106,13 +108,16 @@ private struct EPUBFileListView: View {
                 onMove: viewModel.move
             )
 
+            KindleGenRequirementView(isRequired: true)
+                .padding(.horizontal, 24)
+
             // ── Convert button ─────────────────────────────────────────────
 
             HStack {
                 Spacer()
                 ConvertStopButton(
                     isConverting: false,
-                    isDisabled: viewModel.items.isEmpty || !settings.isKindleGenReady
+                    isDisabled: viewModel.isImporting || viewModel.items.isEmpty || !settings.isKindleGenReady
                 ) {
                     viewModel.startConversion(appSettings: settings, logger: logger)
                 }

@@ -1,14 +1,3 @@
-//
-//  FileQueueView.swift
-//  Me2Press
-//
-//  Generic queue container used by all three conversion tabs.
-//  Composes DropHintView (empty state) and FileRowView (item rows)
-//  inside a dashed-border drop target.
-//  Shows reason-specific rejection banners for unsupported or content-invalid drops,
-//  while duplicate items are silently ignored.
-//
-
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -17,233 +6,170 @@ struct FileQueueView: View {
         let addedCount: Int
         let duplicateCount: Int
         let contentRejectedCount: Int
-
-        static let empty = FileQueueDropSummary(
-            addedCount: 0,
-            duplicateCount: 0,
-            contentRejectedCount: 0
-        )
+        static let empty = FileQueueDropSummary(addedCount: 0, duplicateCount: 0, contentRejectedCount: 0)
     }
 
     let items: [URL]
     @Binding var isTargeted: Bool
-
-    // MARK: Labels
-
+    @Binding var isImporting: Bool
+    let inputTypes: [UTType]
     let headerLabel: LocalizedStringResource
     let countLabel: LocalizedStringResource
-
     var headerTooltip: LocalizedStringResource?
-
-    // MARK: Row appearance
-
     let rowIcon: String
     let rowTint: Color
-
-    // MARK: Empty state
-
     let emptyIcon: String
     let emptyTitle: LocalizedStringResource
     let emptySubtitle: LocalizedStringResource
-    var contentRejectedMessage: LocalizedStringResource? = nil
-
-    // MARK: Actions
-
+    var contentRejectedMessage: LocalizedStringResource?
     let onClearAll: () -> Void
     let onRemove: (URL) -> Void
     let onReveal: (URL) -> Void
-    /// Validates whether a dropped URL is acceptable for this queue.
     let accepts: (URL) -> Bool
-    /// Called with only the accepted URLs after a successful drop.
-    /// Returns a summary that distinguishes additions, duplicates, and content rejection.
     let onDropped: ([URL]) async -> FileQueueDropSummary
-    /// Optional reorder handler. When provided, rows become drag-reorderable.
     var onMove: ((IndexSet, Int) -> Void)?
 
-    // MARK: Rejection state
-
-    @State private var showRejectionHint = false
-    @State private var rejectionMessage: LocalizedStringResource?
-    @State private var rejectionTask: Task<Void, Never>?
+    @State private var showImporter = false
+    @State private var feedback: String?
+    @State private var importTask: Task<Void, Never>?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // ── Queue header ───────────────────────────────────────────────
-
             HStack {
                 Text(headerLabel)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.headline)
                     .foregroundStyle(.secondary)
-
-                if let tooltip = headerTooltip {
+                if let headerTooltip {
                     Image(systemName: "questionmark.circle")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.tertiary)
-                        .help(Text(tooltip))
+                        .help(Text(headerTooltip))
+                        .accessibilityLabel(Text(headerTooltip))
                 }
-
                 Spacer()
-
+                Button {
+                    showImporter = true
+                } label: {
+                    Label(String(localized: "queue.add"), systemImage: "plus")
+                }
+                .keyboardShortcut("o")
+                .disabled(isImporting)
                 if !items.isEmpty {
-                    Button {
-                        withAnimation { onClearAll() }
-                    } label: {
-                        Text(String(localized: "button.clear_all"))
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-
-                    (Text(verbatim: "\(items.count) ") + Text(countLabel))
-                        .font(.system(size: 12))
-                        .foregroundStyle(.tertiary)
+                    Button(String(localized: "button.clear_all"), action: onClearAll)
+                        .disabled(isImporting)
                 }
             }
             .padding(.horizontal, 24)
             .padding(.top, 16)
 
-            // ── Drop zone ──────────────────────────────────────────────────
+            if !items.isEmpty {
+                (Text(verbatim: "\(items.count) ") + Text(countLabel))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 24)
+            }
 
             ZStack {
                 if items.isEmpty {
-                    DropHintView(
-                        icon: emptyIcon,
-                        title: emptyTitle,
-                        subtitle: emptySubtitle,
-                        isTargeted: isTargeted
-                    )
+                    VStack {
+                        DropHintView(icon: emptyIcon, title: emptyTitle, subtitle: emptySubtitle, isTargeted: isTargeted)
+                        Button(String(localized: "queue.choose")) { showImporter = true }
+                            .disabled(isImporting)
+                            .padding(.bottom, 24)
+                    }
                 } else {
-                    // IMPORTANT: List is required for .onMove drag-reorder support;
-                    // LazyVStack does not support .onMove. Separator and default background
-                    // are suppressed to preserve the existing row styling from FileRowView.
                     List {
                         ForEach(items, id: \.self) { item in
-                            FileRowView(
-                                url: item,
-                                icon: rowIcon,
-                                tint: rowTint,
-                                onRemove: { withAnimation { onRemove(item) } },
-                                onReveal: { onReveal(item) }
-                            )
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                            .listRowInsets(EdgeInsets(top: 2, leading: 12, bottom: 2, trailing: 12))
+                            FileRowView(url: item, icon: rowIcon, tint: rowTint,
+                                        onRemove: { onRemove(item) }, onReveal: { onReveal(item) })
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                                .listRowInsets(EdgeInsets(top: 2, leading: 12, bottom: 2, trailing: 12))
                         }
                         .onMove(perform: onMove)
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
-                }
-
-                // ── Rejection banner overlay ───────────────────────────────
-
-                if showRejectionHint, let rejectionMessage {
-                    RejectionBanner(message: rejectionMessage)
-                        .padding(.bottom, 12)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                        .allowsHitTesting(false)
+                    .disabled(isImporting)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(isTargeted ? Color.accentColor.opacity(0.05) : Color.primary.opacity(0.02))
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(
-                        isTargeted ? Color.accentColor : Color.primary.opacity(0.1),
-                        style: StrokeStyle(lineWidth: 1.5, dash: isTargeted ? [] : [6, 4])
-                    )
-            )
+            .background(isTargeted ? Color.accentColor.opacity(0.05) : Color.primary.opacity(0.02),
+                        in: RoundedRectangle(cornerRadius: 12))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(isTargeted ? Color.accentColor : Color.primary.opacity(0.1),
+                                  style: StrokeStyle(lineWidth: 1.5, dash: isTargeted ? [] : [6, 4]))
+                    .allowsHitTesting(false)
+            }
             .padding(.horizontal, 24)
-            .padding(.bottom, 8)
             .onDrop(of: [.fileURL], isTargeted: $isTargeted) { providers in
-                Task { @MainActor in
-                    var resolved = [URL]()
+                guard !isImporting else { return false }
+                isImporting = true
+                feedback = nil
+                importTask = Task { @MainActor in
+                    var urls: [URL] = []
+                    var unreadable = 0
                     for provider in providers {
-                        if let url = try? await loadFileURL(from: provider) {
-                            resolved.append(url)
-                        }
+                        guard !Task.isCancelled else { return }
+                        if let url = try? await loadFileURL(from: provider) { urls.append(url) }
+                        else { unreadable += 1 }
                     }
-
-                    let valid = resolved.filter { accepts($0) }
-                    let unsupportedCount = resolved.count - valid.count
-                    let summary = valid.isEmpty ? .empty : await onDropped(valid)
-
-                    if let rejectionMessage = determineRejectionMessage(
-                        unsupportedCount: unsupportedCount,
-                        contentRejectedCount: summary.contentRejectedCount
-                    ) {
-                        triggerRejectionHint(message: rejectionMessage)
-                    }
+                    await add(urls, unreadable: unreadable)
                 }
                 return true
             }
-        }
-    }
 
-    // MARK: - Private
-
-    /// Shows the rejection banner for 2 seconds, resetting the timer on rapid successive drops.
-    private func triggerRejectionHint(message: LocalizedStringResource) {
-        // Cancel any in-flight hide task before restarting the timer so that rapid
-        // consecutive drops each receive a full 2-second display window.
-        rejectionTask?.cancel()
-        rejectionMessage = message
-        withAnimation(.spring(duration: 0.3)) {
-            showRejectionHint = true
-        }
-        rejectionTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(2))
-            guard !Task.isCancelled else { return }
-            withAnimation(.easeOut(duration: 0.25)) {
-                showRejectionHint = false
+            if isImporting {
+                ProgressView(String(localized: "queue.importing"))
+                    .controlSize(.small)
+                    .padding(.horizontal, 24)
             }
-            rejectionMessage = nil
+            if let feedback {
+                HStack(alignment: .top) {
+                    Text(feedback).font(.caption).textSelection(.enabled)
+                    Spacer(minLength: 4)
+                    Button { self.feedback = nil } label: {
+                        Image(systemName: "xmark")
+                    }
+                    .help(String(localized: "queue.dismiss"))
+                    .accessibilityLabel(String(localized: "queue.dismiss"))
+                }
+                .padding(10)
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+                .padding(.horizontal, 24)
+            }
+        }
+        .fileImporter(isPresented: $showImporter, allowedContentTypes: inputTypes, allowsMultipleSelection: true) { result in
+            switch result {
+            case .success(let urls):
+                guard !isImporting else { return }
+                isImporting = true
+                feedback = nil
+                importTask = Task { await add(urls) }
+            case .failure(let error):
+                feedback = error.localizedDescription
+            }
+        }
+        .onDisappear {
+            importTask?.cancel()
+            importTask = nil
+            isImporting = false
         }
     }
 
-    private func determineRejectionMessage(
-        unsupportedCount: Int,
-        contentRejectedCount: Int
-    ) -> LocalizedStringResource? {
-        if unsupportedCount > 0, contentRejectedCount > 0 {
-            return "label.drop_partial_rejection"
+    private func add(_ urls: [URL], unreadable: Int = 0) async {
+        guard !Task.isCancelled else { return }
+        let valid = urls.filter(accepts)
+        let unsupported = urls.count - valid.count
+        let summary = valid.isEmpty ? .empty : await onDropped(valid)
+        guard !Task.isCancelled else { return }
+        isImporting = false
+        let rejected = unsupported + unreadable + summary.contentRejectedCount
+        feedback = String(localized: "queue.summary \(summary.addedCount) \(summary.duplicateCount) \(rejected)")
+        if unsupported > 0 { feedback? += "\n" + String(localized: "label.unsupported_drop") }
+        if unreadable > 0 { feedback? += "\n" + String(localized: "queue.unreadable") }
+        if summary.contentRejectedCount > 0, let contentRejectedMessage {
+            feedback? += "\n" + String(localized: contentRejectedMessage)
         }
-
-        if unsupportedCount > 0 {
-            return "label.unsupported_drop"
-        }
-
-        if contentRejectedCount > 0 {
-            return contentRejectedMessage
-        }
-
-        return nil
-    }
-}
-
-// MARK: - RejectionBanner
-
-private struct RejectionBanner: View {
-    let message: LocalizedStringResource
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.orange)
-
-            Text(message)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.primary.opacity(0.85))
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 7)
-        .background(.regularMaterial, in: Capsule())
-        .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
     }
 }
