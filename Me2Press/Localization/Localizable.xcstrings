@@ -1,22 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "AZW3" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AZW3"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AZW3"
-          }
-        }
-      }
-    },
     "About Me2Press" : {
       "localizations" : {
         "en" : {
@@ -33,106 +17,18 @@
         }
       }
     },
-    "KindleGen Configuration" : {
+    "AZW3" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "KindleGen Configuration"
+            "value" : "AZW3"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "KindleGen 配置"
-          }
-        }
-      }
-    },
-    "L1" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L1"
-          }
-        }
-      }
-    },
-    "L2" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L2"
-          }
-        }
-      }
-    },
-    "L3" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L3"
-          }
-        }
-      }
-    },
-    "MOBI" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MOBI"
-          }
-        }
-      }
-    },
-    "Me2Press" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Me2Press"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Me2Press"
-          }
-        }
-      }
-    },
-    "Select kindlegen executable" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select kindlegen executable"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择 kindlegen 可执行文件"
-          }
-        }
-      }
-    },
-    "Select..." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select..."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择..."
+            "value" : "AZW3"
           }
         }
       }
@@ -584,6 +480,22 @@
         }
       }
     },
+    "KindleGen Configuration" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KindleGen Configuration"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KindleGen 配置"
+          }
+        }
+      }
+    },
     "kindlegen Path" : {
       "localizations" : {
         "en" : {
@@ -596,6 +508,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "kindlegen 路径"
+          }
+        }
+      }
+    },
+    "L1" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L1"
+          }
+        }
+      }
+    },
+    "L2" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L2"
+          }
+        }
+      }
+    },
+    "L3" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L3"
           }
         }
       }
@@ -1142,6 +1084,32 @@
         }
       }
     },
+    "Me2Press" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me2Press"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me2Press"
+          }
+        }
+      }
+    },
+    "MOBI" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MOBI"
+          }
+        }
+      }
+    },
     "option.indent" : {
       "localizations" : {
         "en" : {
@@ -1612,6 +1580,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未完成 %lld 项"
+          }
+        }
+      }
+    },
+    "Select kindlegen executable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select kindlegen executable"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择 kindlegen 可执行文件"
+          }
+        }
+      }
+    },
+    "Select..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择..."
           }
         }
       }

@@ -20,6 +20,7 @@ struct ConvertStopButton: View {
 
     private var title: String {
         if isStopping { return String(localized: "progress.stopping") }
-        return String(localized: isConverting ? "button.stop" : "button.convert")
+        if isConverting { return String(localized: "button.stop") }
+        return String(localized: "button.convert")
     }
 }
