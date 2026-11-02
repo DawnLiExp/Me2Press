@@ -15,8 +15,12 @@ struct FileRowView: View {
     let tint: Color
     let onRemove: () -> Void
     let onReveal: () -> Void
+    var coverURL: URL?
+    var onChooseCover: (() -> Void)?
+    var onRemoveCover: (() -> Void)?
 
     @State private var isHovered = false
+    @State private var coverImage: NSImage?
 
     private var removeButtonColor: Color {
         isHovered ? tint.opacity(0.6) : Color(nsColor: .tertiaryLabelColor)
@@ -24,10 +28,17 @@ struct FileRowView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: icon)
-                .foregroundStyle(tint.opacity(isHovered ? 1.0 : 0.8))
-                .font(.system(size: 14))
-                .animation(.easeInOut(duration: 0.15), value: isHovered)
+            if let coverImage {
+                Image(nsImage: coverImage)
+                    .resizable().scaledToFit()
+                    .frame(width: 32, height: 44)
+                    .accessibilityHidden(true)
+            } else {
+                Image(systemName: icon)
+                    .foregroundStyle(tint.opacity(isHovered ? 1.0 : 0.8))
+                    .font(.system(size: 14))
+                    .animation(.easeInOut(duration: 0.15), value: isHovered)
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(url.lastPathComponent)
@@ -44,6 +55,23 @@ struct FileRowView: View {
 
             Spacer()
 
+            if let onChooseCover {
+                Menu(String(localized: "comic.cover.menu")) {
+                    if coverURL == nil {
+                        Button(String(localized: "cover.choose"), action: onChooseCover)
+                    } else {
+                        Button(String(localized: "comic.cover.replace"), action: onChooseCover)
+                        if let onRemoveCover {
+                            Button(String(localized: "cover.remove"), action: onRemoveCover)
+                        }
+                    }
+                }
+                .menuStyle(.borderlessButton)
+                .buttonStyle(.borderless)
+                .fixedSize()
+                .accessibilityLabel(String(localized: "comic.cover.for \(url.lastPathComponent)"))
+            }
+
             Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill")
                     .foregroundStyle(removeButtonColor)
@@ -56,6 +84,7 @@ struct FileRowView: View {
             .help(String(localized: "button.remove"))
             .accessibilityLabel(String(localized: "queue.remove_item \(url.lastPathComponent)"))
         }
+        .accessibilityElement(children: .contain)
         .padding(.vertical, 6)
         .padding(.horizontal, 8)
         .background(
@@ -75,6 +104,7 @@ struct FileRowView: View {
         )
         .padding(.horizontal, 12)
         .onHover { isHovered = $0 }
+        .task(id: coverURL) { coverImage = coverURL.flatMap { NSImage(contentsOf: $0) } }
         .contextMenu {
             Button(action: onReveal) {
                 Label(String(localized: "label.show_in_finder"), systemImage: "folder")

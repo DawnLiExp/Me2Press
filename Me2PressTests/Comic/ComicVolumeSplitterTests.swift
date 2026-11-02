@@ -11,6 +11,31 @@ import Testing
 
 @Suite("ComicVolumeSplitter")
 struct ComicVolumeSplitterTests {
+    @Test("Repeated covers consume each volume's budget without duplicating a source page", arguments: [true, false])
+    func repeatedCover(coverIsInSource: Bool) throws {
+        try TestFileSystem.withTemporaryDirectory { directory in
+            let cover = try TestFileSystem.writeDataFile(named: "cover.jpg", size: 20, in: directory)
+            let a = try TestFileSystem.writeDataFile(named: "001.jpg", size: 40, in: directory)
+            let b = try TestFileSystem.writeDataFile(named: "002.jpg", size: 40, in: directory)
+            let c = try TestFileSystem.writeDataFile(named: "003.jpg", size: 1, in: directory)
+            let images = (coverIsInSource ? [cover] : []) + [a, b, c]
+            let volumes = ComicVolumeSplitter.split(imageURLs: images, threshold: 100, coverImageURL: cover)
+            #expect(volumes == [[cover, a, b], [cover, c]])
+            #expect(volumes.allSatisfy { ComicVolumeSplitter.estimateTotalSize(imageURLs: $0) <= 100 })
+        }
+    }
+
+    @Test("A cover selected through a symbolic link is not duplicated")
+    func linkedCover() throws {
+        try TestFileSystem.withTemporaryDirectory { directory in
+            let cover = try TestFileSystem.writeDataFile(named: "cover.jpg", size: 20, in: directory)
+            let page = try TestFileSystem.writeDataFile(named: "page.jpg", size: 30, in: directory)
+            let link = directory.appendingPathComponent("linked.jpg")
+            try FileManager.default.createSymbolicLink(at: link, withDestinationURL: cover)
+            #expect(ComicVolumeSplitter.split(imageURLs: [cover, page], threshold: 100, coverImageURL: link) == [[link, page]])
+        }
+    }
+
     @Test("空输入返回空数组")
     func returnsEmptyVolumesForEmptyInput() {
         #expect(ComicVolumeSplitter.split(imageURLs: []).isEmpty)

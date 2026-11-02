@@ -21,6 +21,15 @@ class ComicBookViewModel {
     private var conversionTask: Task<Void, Never>?
     private var presenter: ConversionEventPresenter?
     private var lastJobs: [URL: ComicConversionJob] = [:]
+    private var covers: [URL: URL] = [:]
+
+    func coverURL(for folder: URL) -> URL? {
+        covers[folder.resolvingSymlinksInPath().standardizedFileURL]
+    }
+
+    func setCover(_ cover: URL?, for folder: URL) {
+        covers[folder.resolvingSymlinksInPath().standardizedFileURL] = cover
+    }
 
     @discardableResult
     func add(_ urls: [URL]) async -> FileQueueView.FileQueueDropSummary {
@@ -64,10 +73,14 @@ class ComicBookViewModel {
 
     func remove(_ url: URL) {
         items.removeAll(where: { $0 == url })
+        setCover(nil, for: url)
+        lastJobs.removeValue(forKey: url)
     }
 
     func clearAll() {
         items.removeAll()
+        covers.removeAll()
+        lastJobs.removeAll()
     }
 
     func move(from source: IndexSet, to destination: Int) {
@@ -98,13 +111,16 @@ class ComicBookViewModel {
             return
         }
 
-        let jobs = items.map {
-            ComicConversionJob(
-                sourceFolderURL: $0,
+        let jobs = items.map { source in
+            let previous = retrying ? lastJobs[source] : nil
+            let cover = previous != nil ? previous?.coverImageURL : coverURL(for: source)
+            return ComicConversionJob(
+                sourceFolderURL: source,
                 authorName: appSettings.authorName,
                 kindlegenURL: kindlegenURL,
                 parallelConversions: min(items.count, appSettings.maxConcurrency),
-                readingDirection: retrying ? lastJobs[$0]?.readingDirection ?? appSettings.comicReadingDirection : appSettings.comicReadingDirection
+                readingDirection: previous?.readingDirection ?? appSettings.comicReadingDirection,
+                coverImageURL: cover
             )
         }
         lastJobs = Dictionary(uniqueKeysWithValues: jobs.map { ($0.sourceFolderURL, $0) })

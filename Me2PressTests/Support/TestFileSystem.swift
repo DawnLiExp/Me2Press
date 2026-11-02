@@ -11,6 +11,19 @@ import ImageIO
 import UniformTypeIdentifiers
 
 enum TestFileSystem {
+    static func readZIPEntry(_ entry: String, from archive: URL) throws -> Data {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
+        process.arguments = ["-p", archive.path, entry]
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        try process.run()
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { throw CocoaError(.fileReadCorruptFile) }
+        return data
+    }
+
     static func writeImage(named name: String, width: Int = 32, height: Int = 48, in directory: URL) throws -> URL {
         let url = directory.appendingPathComponent(name)
         guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,

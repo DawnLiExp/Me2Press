@@ -21,6 +21,8 @@ enum ComicVolumeSplitter {
     /// - Parameters:
     ///   - imageURLs: Sorted image URLs produced by `ComicEPUBBuilder.collectImageURLs`.
     ///   - threshold: Max uncompressed bytes per volume. Defaults to `defaultThreshold`.
+    ///   - coverImageURL: Optional cover repeated and counted in every volume.
+    ///     The same source file is excluded from body pages by its resolved path.
     /// - Returns: A 2-D array of per-volume URL groups.
     ///   Returns a single-element array when total size ≤ threshold.
     ///   Returns an empty array when `imageURLs` is empty.
@@ -29,22 +31,29 @@ enum ComicVolumeSplitter {
     /// rather than being appended indefinitely to the previous one.
     nonisolated static func split(
         imageURLs: [URL],
-        threshold: Int = defaultThreshold
+        threshold: Int = defaultThreshold,
+        coverImageURL: URL? = nil
     ) -> [[URL]] {
         guard !imageURLs.isEmpty else { return [] }
 
+        let cover = coverImageURL.map { [$0] } ?? []
+        let coverSize = coverImageURL.map(fileSize(of:)) ?? 0
+        let coverIdentity = coverImageURL?.resolvingSymlinksInPath().standardizedFileURL
+        let bodyImages = imageURLs.filter {
+            coverIdentity == nil || $0.resolvingSymlinksInPath().standardizedFileURL != coverIdentity
+        }
         var volumes: [[URL]] = []
-        var currentVolume: [URL] = []
-        var currentSize = 0
+        var currentVolume = cover
+        var currentSize = coverSize
 
-        for url in imageURLs {
+        for url in bodyImages {
             let fileSize = fileSize(of: url)
             // Flush the current volume before starting a new one when adding this image
             // would breach the threshold. A lone oversized image always forms its own volume.
-            if !currentVolume.isEmpty, currentSize + fileSize > threshold {
+            if currentVolume.count > cover.count, currentSize + fileSize > threshold {
                 volumes.append(currentVolume)
-                currentVolume = []
-                currentSize = 0
+                currentVolume = cover
+                currentSize = coverSize
             }
             currentVolume.append(url)
             currentSize += fileSize

@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct KindleGenConversionResult: Sendable {
+nonisolated struct KindleGenConversionResult: Sendable {
     let outputURL: URL
     let warnings: [String]
 }

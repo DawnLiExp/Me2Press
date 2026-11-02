@@ -28,6 +28,9 @@ struct FileQueueView: View {
     let accepts: (URL) -> Bool
     let onDropped: ([URL]) async -> FileQueueDropSummary
     var onMove: ((IndexSet, Int) -> Void)?
+    var coverURL: ((URL) -> URL?)?
+    var onChooseCover: ((URL) -> Void)?
+    var onRemoveCover: ((URL) -> Void)?
 
     @State private var selection: Set<URL> = []
     @State private var showImporter = false
@@ -80,7 +83,10 @@ struct FileQueueView: View {
                     List(selection: $selection) {
                         ForEach(items, id: \.self) { item in
                             FileRowView(url: item, icon: rowIcon, tint: rowTint,
-                                        onRemove: { onRemove(item) }, onReveal: { onReveal(item) })
+                                        onRemove: { onRemove(item) }, onReveal: { onReveal(item) },
+                                        coverURL: coverURL?(item),
+                                        onChooseCover: onChooseCover.map { choose in { choose(item) } },
+                                        onRemoveCover: onRemoveCover.map { remove in { remove(item) } })
                                 .tag(item)
                                 .listRowBackground(Color.clear)
                                 .listRowSeparator(.hidden)

@@ -1,0 +1,71 @@
+import Foundation
+import Testing
+@testable import Me2Press
+
+private let realKindlegenURL = URL(fileURLWithPath: "/Applications/Kindle Previewer 3.app/Contents/lib/fc/bin/kindlegen")
+
+@Suite("Real KindleGen pipelines", .serialized,
+       .enabled(if: FileManager.default.isExecutableFile(atPath: realKindlegenURL.path)))
+struct RealKindleConversionTests {
+    @Test("TXT to AZW3 and existing EPUB to AZW3 use the real tool")
+    func textAndEPUB() async throws {
+        try await TestFileSystem.withTemporaryDirectory { directory in
+            let source = try TestFileSystem.writeText("第一章 测试\n这是正文。\n第二章 验证\n这是第二章。", named: "小说.txt", in: directory)
+            let job = TextConversionJob(sourceURL: source, outputFormat: .azw3, indentParagraph: true,
+                                        keepLineBreaks: false, coverImageURL: nil, chapterPatterns: [],
+                                        authorName: "测试作者", kindlegenURL: realKindlegenURL)
+            try await TextConversionWorker.run(job: job) { _ in }
+            try verifyMOBI(source.deletingPathExtension().appendingPathExtension("azw3"))
+            let epubJob = TextConversionJob(sourceURL: source, outputFormat: .epub, indentParagraph: true,
+                                            keepLineBreaks: false, coverImageURL: nil, chapterPatterns: [],
+                                            authorName: "测试作者", kindlegenURL: nil)
+            try await TextConversionWorker.run(job: epubJob) { _ in }
+            let epub = source.deletingPathExtension().appendingPathExtension("epub")
+            try await EPUBConversionWorker.run(job: EPUBConversionJob(sourceURL: epub, kindlegenURL: realKindlegenURL)) { _ in }
+            try verifyMOBI(source.deletingPathExtension().appendingPathExtension("azw3"))
+            #expect(FileManager.default.fileExists(atPath: epub.path))
+        }
+    }
+
+    @Test("Real comic worker packages its selected cover")
+    func singleComic() async throws {
+        try await TestFileSystem.withTemporaryDirectory { directory in
+            let source = try TestFileSystem.createDirectory(named: "漫画", in: directory)
+            _ = try TestFileSystem.writeImage(named: "001.jpg", width: 1236, height: 1648, in: source)
+            let cover = try TestFileSystem.writeImage(named: "cover.png", width: 1236, height: 1648, in: directory)
+            let job = ComicConversionJob(sourceFolderURL: source, authorName: "Author", kindlegenURL: realKindlegenURL,
+                                         readingDirection: .leftToRight, coverImageURL: cover)
+            try await ComicConversionWorker.run(job: job) { _ in }
+            try verifyMOBI(directory.appendingPathComponent("漫画.mobi"))
+        }
+    }
+
+    @Test("Every split comic volume survives real EPUB packing, KindleGen and metadata fixing",
+          arguments: ComicReadingDirection.allCases)
+    func splitComic(direction: ComicReadingDirection) async throws {
+        try await TestFileSystem.withTemporaryDirectory { directory in
+            let cover = try TestFileSystem.writeImage(named: "cover.jpg", width: 1236, height: 1648, in: directory)
+            let pages = try (1...2).map { try TestFileSystem.writeImage(named: "00\($0).png", width: 1236, height: 1648, in: directory) }
+            let threshold = ComicVolumeSplitter.estimateTotalSize(imageURLs: [cover, pages[0]])
+            let volumes = ComicVolumeSplitter.split(imageURLs: pages, threshold: threshold, coverImageURL: cover)
+            #expect(volumes.count == 2)
+            for (index, images) in volumes.enumerated() {
+                let root = directory.appendingPathComponent("volume\(index)")
+                try await ComicEPUBBuilder.build(images: images, title: "Comic [Vol.\(index + 1)]", uuid: "test-volume-\(index)",
+                                                  author: "Author", tempDir: root, readingDirection: direction)
+                let epub = directory.appendingPathComponent("volume\(index).epub")
+                try await ZIPWriter.pack(directoryURL: root, to: epub)
+                let result = try await KindleGenRunner(kindlegenPath: realKindlegenURL).convert(epubPath: epub)
+                try await DualMetaFix.fixAsync(mobiPath: result.outputURL, uuid: UUID().uuidString)
+                try verifyMOBI(result.outputURL)
+            }
+        }
+    }
+
+    private func verifyMOBI(_ url: URL) throws {
+        let data = try Data(contentsOf: url)
+        #expect(data.count > 1_000)
+        #expect(data.range(of: Data("BOOKMOBI".utf8)) != nil)
+        #expect(data.range(of: Data("EBOK".utf8)) != nil)
+    }
+}

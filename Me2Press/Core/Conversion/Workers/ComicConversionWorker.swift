@@ -31,7 +31,7 @@ enum ComicConversionWorker {
             throw Me2PressError.noImagesFound(folderName: baseName)
         }
 
-        let volumes = ComicVolumeSplitter.split(imageURLs: allImages)
+        let volumes = ComicVolumeSplitter.split(imageURLs: allImages, coverImageURL: job.coverImageURL)
         let totalVolumes = volumes.count
 
         if totalVolumes > 1 {

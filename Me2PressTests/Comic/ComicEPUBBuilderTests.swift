@@ -4,6 +4,35 @@ import Testing
 
 @Suite("Comic EPUB layout")
 struct ComicEPUBBuilderTests {
+    @Test("Each volume declares its independent JPEG or PNG cover and preserves body pages",
+          arguments: ComicReadingDirection.allCases, ["jpg", "png"])
+    func independentCover(direction: ComicReadingDirection, ext: String) async throws {
+        try await TestFileSystem.withTemporaryDirectory { directory in
+            let cover = try TestFileSystem.writeImage(named: "cover.\(ext)", width: 80, height: 100, in: directory)
+            let pages = try (1...3).map { try TestFileSystem.writeImage(named: "00\($0).jpg", width: 32 + $0, in: directory) }
+            let maxPageSize = pages.map { ComicVolumeSplitter.estimateTotalSize(imageURLs: [$0]) }.max() ?? 0
+            let threshold = ComicVolumeSplitter.estimateTotalSize(imageURLs: [cover]) + maxPageSize
+            let volumes = ComicVolumeSplitter.split(imageURLs: pages, threshold: threshold, coverImageURL: cover)
+            #expect(volumes.count == 3)
+            for (index, images) in volumes.enumerated() {
+                let output = directory.appendingPathComponent("volume\(index)")
+                try await ComicEPUBBuilder.build(images: images, title: "Book \(index)", uuid: "test", author: "Author", tempDir: output, readingDirection: direction)
+                let opf = try XMLDocument(contentsOf: output.appendingPathComponent("OEBPS/content.opf"))
+                let coverItem = try #require(opf.nodes(forXPath: "//*[@properties='cover-image']").first as? XMLElement)
+                #expect(coverItem.attribute(forName: "href")?.stringValue == "Images/img-0001.\(ext)")
+                #expect(coverItem.attribute(forName: "media-type")?.stringValue == (ext == "png" ? "image/png" : "image/jpeg"))
+                let coverMeta = try #require(opf.nodes(forXPath: "//*[@name='cover']").first as? XMLElement)
+                #expect(coverMeta.attribute(forName: "content")?.stringValue == coverItem.attribute(forName: "id")?.stringValue)
+                let spine = try #require(opf.nodes(forXPath: "//*[local-name()='spine']").first as? XMLElement)
+                let pageRefs = (spine.children ?? []).compactMap { $0 as? XMLElement }
+                #expect(pageRefs.count == 2)
+                #expect(pageRefs.first?.attribute(forName: "properties")?.stringValue == (direction == .rightToLeft ? "page-spread-right" : "page-spread-left"))
+                #expect(try Data(contentsOf: output.appendingPathComponent("OEBPS/Images/img-0001.\(ext)")) == Data(contentsOf: cover))
+                #expect(try Data(contentsOf: output.appendingPathComponent("OEBPS/Images/img-0002.jpg")) == Data(contentsOf: pages[index]))
+            }
+        }
+    }
+
     @Test("Direction controls metadata and page sides, not natural file order", arguments: ComicReadingDirection.allCases)
     func readingDirection(direction: ComicReadingDirection) async throws {
         try await TestFileSystem.withTemporaryDirectory { directory in
