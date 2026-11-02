@@ -27,6 +27,14 @@ struct ComicConversionJob: Sendable {
     let sourceFolderURL: URL
     let authorName: String
     let kindlegenURL: URL
+    let parallelConversions: Int
+
+    nonisolated init(sourceFolderURL: URL, authorName: String, kindlegenURL: URL, parallelConversions: Int = 1) {
+        self.sourceFolderURL = sourceFolderURL
+        self.authorName = authorName
+        self.kindlegenURL = kindlegenURL
+        self.parallelConversions = parallelConversions
+    }
 }
 
 enum ConversionJob: Sendable {

@@ -2208,6 +2208,23 @@
         }
       }
     },
+    "warning.comic_space %@ %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The working disk has %@ available; current parallel conversions may need about %@. Free space or reduce parallel tasks if conversion fails."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作盘剩余 %@，当前并发转换预计可能需要约 %@。如转换失败，请释放空间或减少并行任务。"
+          }
+        }
+      }
+    },
     "warning.kindlegen" : {
       "extractionState" : "manual",
       "localizations" : {

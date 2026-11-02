@@ -75,6 +75,14 @@ enum ComicConversionWorker {
                     : ""
             ))
 
+            if let warning = ComicWorkspaceSpace.warning(
+                in: outputFolder,
+                volumeBytes: ComicVolumeSplitter.estimateTotalSize(imageURLs: volumeImages),
+                parallelConversions: job.parallelConversions
+            ) {
+                await eventSink(.log(level: .warn, message: "[\(volName)] \(warning)"))
+            }
+
             let workspace = try TemporaryWorkspace.create(nextTo: outputFolder)
             defer { workspace.cleanup() }
 

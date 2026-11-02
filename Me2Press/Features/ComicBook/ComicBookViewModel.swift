@@ -97,7 +97,8 @@ class ComicBookViewModel {
             ComicConversionJob(
                 sourceFolderURL: $0,
                 authorName: appSettings.authorName,
-                kindlegenURL: kindlegenURL
+                kindlegenURL: kindlegenURL,
+                parallelConversions: min(items.count, appSettings.maxConcurrency)
             )
         }
         let maxConcurrency = appSettings.maxConcurrency
