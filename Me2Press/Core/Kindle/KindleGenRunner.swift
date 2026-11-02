@@ -7,7 +7,11 @@
 //
 
 import Foundation
-import OSLog
+
+struct KindleGenConversionResult: Sendable {
+    let outputURL: URL
+    let warnings: [String]
+}
 
 actor KindleGenRunner {
     let kindlegenPath: URL
@@ -16,11 +20,12 @@ actor KindleGenRunner {
         self.kindlegenPath = kindlegenPath
     }
 
-    func convert(epubPath: URL) async throws -> URL {
+    func convert(epubPath: URL) async throws -> KindleGenConversionResult {
+        try Task.checkCancellation()
         // 629_145_600 = 600 MB — mirrors the threshold KCC uses for the same kindlegen restriction.
         let epubSize = (try? FileManager.default.attributesOfItem(atPath: epubPath.path)[.size] as? Int) ?? 0
         if epubSize >= 629_145_600 {
-            throw Me2PressError.epubTooLarge
+            throw Me2PressError.epubTooLarge(output: "")
         }
 
         let targetMobiPath = epubPath.deletingPathExtension().appendingPathExtension("mobi")
@@ -48,6 +53,7 @@ actor KindleGenRunner {
             throw error
         }
 
+        try? pipe.fileHandleForWriting.close()
         let outputStr = await outputTask.value
 
         // Propagate cancellation immediately; do not act on kindlegen output after termination.
@@ -56,18 +62,25 @@ actor KindleGenRunner {
         // IMPORTANT: kindlegen exit code semantics differ from Unix conventions.
         // 0 = success, 1 = converted with warnings (output file is still valid), 2 = fatal error.
         // Treat exit code 1 as success to avoid discarding valid output.
-        if exitCode == 0 {
-            return targetMobiPath
-        }
-        if exitCode == 1 {
-            let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Me2Press", category: "KindleGenRunner")
-            logger.warning("Built with warnings (exit code 1)")
-            return targetMobiPath
+        if exitCode == 0 || exitCode == 1 {
+            guard FileManager.default.fileExists(atPath: targetMobiPath.path) else {
+                throw Me2PressError.kindlegenFailed(
+                    exitCode: exitCode,
+                    output: outputStr + "\n" + String(localized: "error.kindlegen_no_output")
+                )
+            }
+            var warnings = outputStr.components(separatedBy: .newlines).filter {
+                $0.range(of: #"\bW\d{5}\b"#, options: .regularExpression) != nil
+            }
+            if exitCode == 1, warnings.isEmpty {
+                warnings = [outputStr.isEmpty ? String(localized: "warning.kindlegen") : outputStr]
+            }
+            return KindleGenConversionResult(outputURL: targetMobiPath, warnings: warnings)
         }
         // E23026 is kindlegen's own "source file too large" error; surface it as the typed case
         // rather than a generic kindlegenFailed so the UI can show a targeted recovery message.
         if outputStr.contains("E23026") {
-            throw Me2PressError.epubTooLarge
+            throw Me2PressError.epubTooLarge(output: outputStr)
         }
 
         throw Me2PressError.kindlegenFailed(exitCode: exitCode, output: outputStr)

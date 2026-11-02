@@ -363,6 +363,23 @@
         }
       }
     },
+    "error.kindlegen_no_output" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KindleGen did not create an output file."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KindleGen 未生成输出文件。"
+          }
+        }
+      }
+    },
     "error.mobi_format %@" : {
       "localizations" : {
         "en" : {
@@ -2051,6 +2068,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "v%1$@  Build %2$@"
+          }
+        }
+      }
+    },
+    "warning.kindlegen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KindleGen built the book with warnings."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KindleGen 已生成书籍，但有警告。"
           }
         }
       }

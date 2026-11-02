@@ -23,7 +23,7 @@ enum Me2PressError: LocalizedError {
     case zipRenameFailed(exitCode: Int32)
     
     // ── KindleGen ────────────────────────────────────────
-    case epubTooLarge
+    case epubTooLarge(output: String)
     case kindlegenFailed(exitCode: Int32, output: String)
     
     // ── MOBI metadata ────────────────────────────────────
@@ -56,6 +56,15 @@ enum Me2PressError: LocalizedError {
         case .epubTooLarge: return String(localized: "error.recovery.epub_too_large")
         case .kindlegenFailed: return String(localized: "error.recovery.check_kindlegen")
         default: return nil
+        }
+    }
+
+    var kindlegenOutput: String? {
+        switch self {
+        case .kindlegenFailed(_, let output), .epubTooLarge(let output):
+            output.isEmpty ? nil : output
+        default:
+            nil
         }
     }
 }

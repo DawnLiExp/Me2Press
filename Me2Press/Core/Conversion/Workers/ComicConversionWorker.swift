@@ -120,7 +120,9 @@ enum ComicConversionWorker {
                     rate: 0.06
                 )
                 let t3 = CFAbsoluteTimeGetCurrent()
-                let mobiPath = try await runner.convert(epubPath: tempEpubURL)
+                let mobiPath = try await ConversionWorkerSupport.convertWithDiagnostics(
+                    runner: runner, epubURL: tempEpubURL, name: volName, eventSink: eventSink
+                )
                 await emitVolumeProgress(0.95, step: String(localized: "progress.kindlegen"))
                 await ConversionWorkerSupport.emitStepLog(
                     name: volName,

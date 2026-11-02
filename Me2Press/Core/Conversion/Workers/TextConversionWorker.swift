@@ -124,7 +124,9 @@ enum TextConversionWorker {
                 eventSink: eventSink
             )
             t = CFAbsoluteTimeGetCurrent()
-            let mobiPath = try await runner.convert(epubPath: tempEpubURL)
+            let mobiPath = try await ConversionWorkerSupport.convertWithDiagnostics(
+                runner: runner, epubURL: tempEpubURL, name: name, eventSink: eventSink
+            )
             await ConversionWorkerSupport.emitProgress(
                 local: 0.95,
                 step: String(localized: "progress.kindlegen"),

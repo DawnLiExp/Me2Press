@@ -8,6 +8,27 @@
 import Foundation
 
 enum ConversionWorkerSupport {
+    nonisolated static func convertWithDiagnostics(
+        runner: KindleGenRunner,
+        epubURL: URL,
+        name: String,
+        eventSink: ConversionEventSink
+    ) async throws -> URL {
+        do {
+            let result = try await runner.convert(epubPath: epubURL)
+            for warning in result.warnings {
+                await eventSink(.log(level: .warn, message: "[\(name)] kindlegen: \(warning)"))
+            }
+            return result.outputURL
+        } catch let error as Me2PressError {
+            if let output = error.kindlegenOutput {
+                // Keep one complete block so the log entry limit does not truncate a diagnostic.
+                await eventSink(.log(level: .error, message: "[\(name)] kindlegen:\n\(output)"))
+            }
+            throw error
+        }
+    }
+
     nonisolated static func emitProgress(
         local: Double,
         step: String,

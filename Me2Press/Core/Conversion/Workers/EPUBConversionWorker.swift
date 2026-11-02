@@ -33,7 +33,9 @@ enum EPUBConversionWorker {
             eventSink: eventSink
         )
         var t = CFAbsoluteTimeGetCurrent()
-        let mobiPath = try await runner.convert(epubPath: kindleReadyEPUBURL)
+        let mobiPath = try await ConversionWorkerSupport.convertWithDiagnostics(
+            runner: runner, epubURL: kindleReadyEPUBURL, name: name, eventSink: eventSink
+        )
         await ConversionWorkerSupport.emitProgress(
             local: 0.95,
             step: String(localized: "progress.kindlegen"),

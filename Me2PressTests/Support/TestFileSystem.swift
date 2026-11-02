@@ -8,6 +8,12 @@
 import Foundation
 
 enum TestFileSystem {
+    static func writeExecutableScript(_ body: String, in directory: URL) throws -> URL {
+        let url = try writeText("#!/bin/sh\nset -eu\n" + body + "\n", named: "tool-\(UUID().uuidString)", in: directory)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
+        return url
+    }
+
     static func withTemporaryDirectory<T>(
         _ body: (URL) throws -> T
     ) throws -> T {
