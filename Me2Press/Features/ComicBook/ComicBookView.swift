@@ -42,6 +42,7 @@ private struct ComicFolderListView: View {
     @Environment(LogManager.self) private var logger
 
     var body: some View {
+        @Bindable var settings = settings
         VStack(alignment: .leading, spacing: 0) {
             // ── Header ────────────────────────────────────────────────────
 
@@ -72,6 +73,14 @@ private struct ComicFolderListView: View {
                     }
                     Spacer()
                 }
+
+                Picker(String(localized: "comic.reading_direction"), selection: $settings.comicReadingDirection) {
+                    ForEach(ComicReadingDirection.allCases) { direction in
+                        Text(direction.title).tag(direction)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityLabel(String(localized: "comic.reading_direction"))
 
                 // Concurrency control — inline for quick adjustment without opening Settings
                 VStack(alignment: .leading, spacing: 8) {

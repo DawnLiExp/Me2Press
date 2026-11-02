@@ -24,6 +24,7 @@ Me2Press is a macOS tool for preparing Kindle-ready books locally — converting
 **Comic Book**: Image folder → MOBI (fixed layout)
 - Drop a folder of images to pack it as one MOBI; drop a parent folder to auto-expand and batch-process its subfolders
 - Auto-splits into volumes (`Vol.1` / `Vol.2` …) when total image size exceeds 380 MB
+- Right-to-left (default) or left-to-right reading direction
 - Packing logic references [KCC](https://github.com/ciromattia/kcc) (packaging only, no image processing); I use [Me2Comic](https://github.com/DawnLiExp/Me2Comic) to prepare images beforehand
 
 **EPUB Book**: EPUB → AZW3

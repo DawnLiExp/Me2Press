@@ -20,6 +20,7 @@ class ComicBookViewModel {
 
     private var conversionTask: Task<Void, Never>?
     private var presenter: ConversionEventPresenter?
+    private var lastJobs: [URL: ComicConversionJob] = [:]
 
     @discardableResult
     func add(_ urls: [URL]) async -> FileQueueView.FileQueueDropSummary {
@@ -76,7 +77,7 @@ class ComicBookViewModel {
     func retryFailed(appSettings: AppSettings, logger: LogManager) {
         guard !isConverting else { return }
         items = progress.failures.map(\.sourceURL)
-        startConversion(appSettings: appSettings, logger: logger)
+        startConversion(appSettings: appSettings, logger: logger, retrying: true)
     }
 
     func stopConversion() {
@@ -87,6 +88,10 @@ class ComicBookViewModel {
     }
 
     func startConversion(appSettings: AppSettings, logger: LogManager) {
+        startConversion(appSettings: appSettings, logger: logger, retrying: false)
+    }
+
+    private func startConversion(appSettings: AppSettings, logger: LogManager, retrying: Bool) {
         guard !items.isEmpty, !isConverting, !isImporting else { return }
         guard appSettings.isKindleGenReady, let kindlegenURL = appSettings.kindlegenURL else {
             logger.log(level: .error, "kindlegen is not configured.")
@@ -98,9 +103,11 @@ class ComicBookViewModel {
                 sourceFolderURL: $0,
                 authorName: appSettings.authorName,
                 kindlegenURL: kindlegenURL,
-                parallelConversions: min(items.count, appSettings.maxConcurrency)
+                parallelConversions: min(items.count, appSettings.maxConcurrency),
+                readingDirection: retrying ? lastJobs[$0]?.readingDirection ?? appSettings.comicReadingDirection : appSettings.comicReadingDirection
             )
         }
+        lastJobs = Dictionary(uniqueKeysWithValues: jobs.map { ($0.sourceFolderURL, $0) })
         let maxConcurrency = appSettings.maxConcurrency
         let progress = self.progress
         let presenter = ConversionEventPresenter(

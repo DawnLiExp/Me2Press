@@ -26,6 +26,7 @@ Me2Press 是一款 macOS 本地 Kindle 书籍制作工具，支持将 TXT 小说
 **漫画书籍**：图片文件夹 → MOBI（固定布局）
 - 拖入含图片的文件夹，打包为单本 MOBI；拖入父目录自动展开子文件夹批量处理
 - 图片总体积超过 380 MB 自动分卷（`Vol.1` / `Vol.2` …）
+- 支持从右到左（默认）或从左到右阅读
 - 打包逻辑参考了 [KCC](https://github.com/ciromattia/kcc)（仅打包部分，不含图片处理）；图片预处理我会先用 [Me2Comic](https://github.com/DawnLiExp/Me2Comic) 完成
 
 **EPUB 转换**：EPUB → AZW3

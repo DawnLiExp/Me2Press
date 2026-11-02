@@ -49,8 +49,9 @@ enum ComicEPUBBuilder {
 
     // MARK: - Async entry points
 
-    static func buildAsync(folderURL: URL, uuid: String, author: String, tempDir: URL) async throws {
-        try await build(folderURL: folderURL, uuid: uuid, author: author, tempDir: tempDir)
+    static func buildAsync(folderURL: URL, uuid: String, author: String, tempDir: URL,
+                           readingDirection: ComicReadingDirection = .rightToLeft) async throws {
+        try await build(folderURL: folderURL, uuid: uuid, author: author, tempDir: tempDir, readingDirection: readingDirection)
     }
 
     static func buildAsync(
@@ -58,14 +59,16 @@ enum ComicEPUBBuilder {
         title: String,
         uuid: String,
         author: String,
-        tempDir: URL
+        tempDir: URL,
+        readingDirection: ComicReadingDirection = .rightToLeft
     ) async throws {
-        try await build(images: images, title: title, uuid: uuid, author: author, tempDir: tempDir)
+        try await build(images: images, title: title, uuid: uuid, author: author, tempDir: tempDir, readingDirection: readingDirection)
     }
 
     // MARK: - Synchronous wrappers
 
-    nonisolated static func build(folderURL: URL, uuid: String, author: String, tempDir: URL) async throws {
+    nonisolated static func build(folderURL: URL, uuid: String, author: String, tempDir: URL,
+                                  readingDirection: ComicReadingDirection = .rightToLeft) async throws {
         let fm = FileManager.default
         let images = collectImageURLs(in: folderURL, fileManager: fm)
         guard !images.isEmpty else {
@@ -75,7 +78,8 @@ enum ComicEPUBBuilder {
                                   title: folderURL.lastPathComponent,
                                   uuid: uuid,
                                   author: author,
-                                  tempDir: tempDir)
+                                  tempDir: tempDir,
+                                  readingDirection: readingDirection)
     }
 
     nonisolated static func build(
@@ -83,12 +87,13 @@ enum ComicEPUBBuilder {
         title: String,
         uuid: String,
         author: String,
-        tempDir: URL
+        tempDir: URL,
+        readingDirection: ComicReadingDirection = .rightToLeft
     ) async throws {
         guard !images.isEmpty else {
             throw Me2PressError.noImagesFound(folderName: title)
         }
-        try await buildFromImages(images, title: title, uuid: uuid, author: author, tempDir: tempDir)
+        try await buildFromImages(images, title: title, uuid: uuid, author: author, tempDir: tempDir, readingDirection: readingDirection)
     }
 
     // MARK: - Private core
@@ -103,7 +108,8 @@ enum ComicEPUBBuilder {
         title: String,
         uuid: String,
         author: String,
-        tempDir: URL
+        tempDir: URL,
+        readingDirection: ComicReadingDirection
     ) async throws {
         let fm = FileManager.default
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -190,9 +196,8 @@ enum ComicEPUBBuilder {
         var manifestItems = [String]()
         var maxW = 1236
         var maxH = 1648
-        // IMPORTANT: page-spread alternates right→left starting with the cover page.
-        // Kindle uses this to determine double-page spread layout; do not reset mid-volume.
-        var pageSide = "right"
+        // Start from the cover side for this direction, then alternate throughout the volume.
+        var pageSide = readingDirection.firstPageSide
 
         for meta in metas {
             try Task.checkCancellation()
@@ -299,7 +304,7 @@ enum ComicEPUBBuilder {
             <meta name="fixed-layout" content="true"/>
             <meta name="original-resolution" content="\(maxW)x\(maxH)"/>
             <meta name="book-type" content="comic"/>
-            <meta name="primary-writing-mode" content="horizontal-rl"/>
+            <meta name="primary-writing-mode" content="\(readingDirection.writingMode)"/>
             <meta name="zero-gutter" content="true"/>
             <meta name="zero-margin" content="true"/>
             <meta name="region-mag" content="true"/>
@@ -314,7 +319,7 @@ enum ComicEPUBBuilder {
             <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
         \(manifestItems.joined(separator: "\n"))
           </manifest>
-          <spine page-progression-direction="rtl" toc="ncx">
+          <spine page-progression-direction="\(readingDirection.rawValue)" toc="ncx">
         \(spineItems.joined(separator: "\n"))
           </spine>
         </package>

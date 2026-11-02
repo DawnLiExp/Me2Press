@@ -94,7 +94,8 @@ enum ComicConversionWorker {
                     title: volName,
                     uuid: workspace.uuid,
                     author: job.authorName,
-                    tempDir: workspace.contentURL
+                    tempDir: workspace.contentURL,
+                    readingDirection: job.readingDirection
                 )
                 await emitVolumeProgress(0.20, step: String(localized: "progress.building_epub"))
                 await ConversionWorkerSupport.emitStepLog(

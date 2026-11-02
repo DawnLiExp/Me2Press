@@ -28,12 +28,15 @@ struct ComicConversionJob: Sendable {
     let authorName: String
     let kindlegenURL: URL
     let parallelConversions: Int
+    let readingDirection: ComicReadingDirection
 
-    nonisolated init(sourceFolderURL: URL, authorName: String, kindlegenURL: URL, parallelConversions: Int = 1) {
+    nonisolated init(sourceFolderURL: URL, authorName: String, kindlegenURL: URL,
+                     parallelConversions: Int = 1, readingDirection: ComicReadingDirection = .rightToLeft) {
         self.sourceFolderURL = sourceFolderURL
         self.authorName = authorName
         self.kindlegenURL = kindlegenURL
         self.parallelConversions = parallelConversions
+        self.readingDirection = readingDirection
     }
 }
 

@@ -80,6 +80,10 @@ class AppSettings {
     private var kindleGenProbeTask: Task<Void, Never>?
     private var kindleGenProbeGeneration = 0
 
+    var comicReadingDirection: ComicReadingDirection = .rightToLeft {
+        didSet { defaults.set(comicReadingDirection.rawValue, forKey: "comicReadingDirection") }
+    }
+
     // MARK: - Concurrency
 
     /// Max parallel conversion tasks (1–6). Clamped in didSet; written to UserDefaults.
@@ -121,6 +125,10 @@ class AppSettings {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        if let value = defaults.string(forKey: "comicReadingDirection"),
+           let direction = ComicReadingDirection(rawValue: value) {
+            comicReadingDirection = direction
+        }
         if let path = defaults.string(forKey: "kindlegenPath") {
             kindlegenURL = URL(fileURLWithPath: path)
         }
