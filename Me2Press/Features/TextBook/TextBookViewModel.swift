@@ -30,10 +30,18 @@ class TextBookViewModel {
     var outputFormat: OutputFormat = .azw3
     var indentParagraph: Bool = true
     var keepLineBreaks: Bool = false
-    var coverImageURL: URL?
-
     private var conversionTask: Task<Void, Never>?
     private var presenter: ConversionEventPresenter?
+    private var covers: [URL: URL] = [:]
+    private var lastJobs: [URL: TextConversionJob] = [:]
+
+    func coverURL(for source: URL) -> URL? {
+        covers[source.resolvingSymlinksInPath().standardizedFileURL]
+    }
+
+    func setCover(_ cover: URL?, for source: URL) {
+        covers[source.resolvingSymlinksInPath().standardizedFileURL] = cover
+    }
 
     @discardableResult
     func add(_ urls: [URL]) async -> FileQueueView.FileQueueDropSummary {
@@ -60,10 +68,14 @@ class TextBookViewModel {
 
     func remove(_ url: URL) {
         items.removeAll(where: { $0 == url })
+        setCover(nil, for: url)
+        lastJobs.removeValue(forKey: url.resolvingSymlinksInPath().standardizedFileURL)
     }
 
     func clearAll() {
         items.removeAll()
+        covers.removeAll()
+        lastJobs.removeAll()
     }
 
     func move(from source: IndexSet, to destination: Int) {
@@ -73,7 +85,7 @@ class TextBookViewModel {
     func retryFailed(appSettings: AppSettings, logger: LogManager) {
         guard !isConverting else { return }
         items = progress.failures.map(\.sourceURL)
-        startConversion(appSettings: appSettings, logger: logger)
+        startConversion(appSettings: appSettings, logger: logger, retrying: true)
     }
 
     func stopConversion() {
@@ -84,24 +96,33 @@ class TextBookViewModel {
     }
 
     func startConversion(appSettings: AppSettings, logger: LogManager) {
+        startConversion(appSettings: appSettings, logger: logger, retrying: false)
+    }
+
+    private func startConversion(appSettings: AppSettings, logger: LogManager, retrying: Bool) {
         guard !items.isEmpty, !isConverting, !isImporting else { return }
         if outputFormat == .azw3, !appSettings.isKindleGenReady {
             logger.log(level: .error, "kindlegen is not configured for AZW3 conversion.")
             return
         }
 
-        let jobs = items.map {
-            TextConversionJob(
-                sourceURL: $0,
+        let jobs = items.map { source in
+            let previous = retrying ? lastJobs[source.resolvingSymlinksInPath().standardizedFileURL] : nil
+            let cover = previous != nil ? previous?.coverImageURL : coverURL(for: source)
+            return TextConversionJob(
+                sourceURL: source,
                 outputFormat: outputFormat,
                 indentParagraph: indentParagraph,
                 keepLineBreaks: keepLineBreaks,
-                coverImageURL: coverImageURL,
+                coverImageURL: cover,
                 chapterPatterns: appSettings.chapterPatterns,
                 authorName: appSettings.authorName,
                 kindlegenURL: appSettings.kindlegenURL
             )
         }
+        lastJobs = Dictionary(uniqueKeysWithValues: jobs.map {
+            ($0.sourceURL.resolvingSymlinksInPath().standardizedFileURL, $0)
+        })
         let maxConcurrency = appSettings.maxConcurrency
         let progress = self.progress
         let presenter = ConversionEventPresenter(

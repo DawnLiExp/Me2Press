@@ -31,6 +31,7 @@ struct FileQueueView: View {
     var coverURL: ((URL) -> URL?)?
     var onChooseCover: ((URL) -> Void)?
     var onRemoveCover: ((URL) -> Void)?
+    var defaultCoverHint: LocalizedStringResource?
 
     @State private var selection: Set<URL> = []
     @State private var showImporter = false
@@ -86,7 +87,8 @@ struct FileQueueView: View {
                                         onRemove: { onRemove(item) }, onReveal: { onReveal(item) },
                                         coverURL: coverURL?(item),
                                         onChooseCover: onChooseCover.map { choose in { choose(item) } },
-                                        onRemoveCover: onRemoveCover.map { remove in { remove(item) } })
+                                        onRemoveCover: onRemoveCover.map { remove in { remove(item) } },
+                                        defaultCoverHint: defaultCoverHint)
                                 .tag(item)
                                 .listRowBackground(Color.clear)
                                 .listRowSeparator(.hidden)

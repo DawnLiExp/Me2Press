@@ -164,7 +164,7 @@
         }
       }
     },
-    "comic.cover.done" : {
+    "cover.done" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -181,7 +181,7 @@
         }
       }
     },
-    "comic.cover.for %@" : {
+    "cover.for %@" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -215,7 +215,7 @@
         }
       }
     },
-    "comic.cover.menu" : {
+    "cover.menu" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -232,7 +232,7 @@
         }
       }
     },
-    "comic.cover.replace" : {
+    "cover.replace" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -296,6 +296,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "阅读方向"
+          }
+        }
+      }
+    },
+    "cover.automatic" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto-generated cover"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动生成封面"
+          }
+        }
+      }
+    },
+    "text.cover.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A cover is generated automatically when none is selected."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未选择时自动生成封面。"
           }
         }
       }

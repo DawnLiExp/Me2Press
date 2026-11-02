@@ -18,6 +18,7 @@ struct FileRowView: View {
     var coverURL: URL?
     var onChooseCover: (() -> Void)?
     var onRemoveCover: (() -> Void)?
+    var defaultCoverHint: LocalizedStringResource?
 
     @State private var isHovered = false
     @State private var coverImage: NSImage?
@@ -50,17 +51,22 @@ struct FileRowView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
+                if coverURL == nil, let defaultCoverHint {
+                    Text(defaultCoverHint)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             .help(url.path)
 
             Spacer()
 
             if let onChooseCover {
-                Menu(String(localized: "comic.cover.menu")) {
+                Menu(String(localized: "cover.menu")) {
                     if coverURL == nil {
                         Button(String(localized: "cover.choose"), action: onChooseCover)
                     } else {
-                        Button(String(localized: "comic.cover.replace"), action: onChooseCover)
+                        Button(String(localized: "cover.replace"), action: onChooseCover)
                         if let onRemoveCover {
                             Button(String(localized: "cover.remove"), action: onRemoveCover)
                         }
@@ -69,7 +75,7 @@ struct FileRowView: View {
                 .menuStyle(.borderlessButton)
                 .buttonStyle(.borderless)
                 .fixedSize()
-                .accessibilityLabel(String(localized: "comic.cover.for \(url.lastPathComponent)"))
+                .accessibilityLabel(String(localized: "cover.for \(url.lastPathComponent)"))
             }
 
             Button(action: onRemove) {

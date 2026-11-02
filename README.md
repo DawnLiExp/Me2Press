@@ -17,7 +17,7 @@ Me2Press is a macOS tool for preparing Kindle-ready books locally — converting
 
 **Text Book**: TXT → EPUB / AZW3
 - Chapter detection via customizable regex rules, with multi-level heading support
-- Auto-generated cover; custom cover image supported
+- Choose a separate JPG / PNG cover for each book; a cover is generated automatically when none is selected
 - Optional first-line indent and original line break preservation
 - Auto-detects encoding: UTF-8 / GB18030 / UTF-16
 

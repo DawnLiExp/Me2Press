@@ -38,6 +38,7 @@ private struct TextBookFileListView: View {
     @Binding var isTargeted: Bool
     @Environment(AppSettings.self) private var settings
     @Environment(LogManager.self) private var logger
+    @State private var coverTarget: URL?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -45,11 +46,6 @@ private struct TextBookFileListView: View {
 
             VStack(alignment: .leading, spacing: 16) {
                 HStack(alignment: .top, spacing: 24) {
-                    CoverDropZone(coverURL: $viewModel.coverImageURL)
-                        .frame(width: 100, height: 140)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
-
                     VStack(alignment: .leading, spacing: 12) {
                         HStack(alignment: .center, spacing: 8) {
                             Image(systemName: "doc.text.fill")
@@ -115,7 +111,11 @@ private struct TextBookFileListView: View {
                 onReveal: { NSWorkspace.shared.activateFileViewerSelecting([$0]) },
                 accepts: { $0.pathExtension.lowercased() == "txt" },
                 onDropped: { await viewModel.add($0) },
-                onMove: viewModel.move
+                onMove: viewModel.move,
+                coverURL: viewModel.coverURL,
+                onChooseCover: { coverTarget = $0 },
+                onRemoveCover: { viewModel.setCover(nil, for: $0) },
+                defaultCoverHint: "cover.automatic"
             )
 
             KindleGenRequirementView(isRequired: viewModel.outputFormat == .azw3)
@@ -135,6 +135,14 @@ private struct TextBookFileListView: View {
                 Spacer()
             }
             .padding(24)
+        }
+        .sheet(isPresented: Binding(get: { coverTarget != nil }, set: { if !$0 { coverTarget = nil } })) {
+            if let source = coverTarget {
+                BookCoverEditor(sourceURL: source, hint: "text.cover.hint", coverURL: Binding(
+                    get: { viewModel.coverURL(for: source) },
+                    set: { viewModel.setCover($0, for: source) }
+                ))
+            }
         }
     }
 }

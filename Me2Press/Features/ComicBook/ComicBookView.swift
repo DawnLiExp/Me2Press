@@ -180,35 +180,11 @@ private struct ComicFolderListView: View {
         }
         .sheet(isPresented: Binding(get: { coverTarget != nil }, set: { if !$0 { coverTarget = nil } })) {
             if let folder = coverTarget {
-                ComicCoverEditor(folder: folder, coverURL: Binding(
+                BookCoverEditor(sourceURL: folder, hint: "comic.cover.hint", coverURL: Binding(
                     get: { viewModel.coverURL(for: folder) },
                     set: { viewModel.setCover($0, for: folder) }
                 ))
             }
         }
-    }
-}
-
-private struct ComicCoverEditor: View {
-    let folder: URL
-    @Binding var coverURL: URL?
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Text(folder.lastPathComponent)
-                .font(.headline)
-                .lineLimit(2)
-                .help(folder.path)
-            Text(String(localized: "comic.cover.hint"))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            CoverDropZone(coverURL: $coverURL)
-            Button(String(localized: "comic.cover.done")) { dismiss() }
-                .keyboardShortcut(.defaultAction)
-        }
-        .padding(24)
-        .frame(width: 360)
-        .onExitCommand { dismiss() }
     }
 }

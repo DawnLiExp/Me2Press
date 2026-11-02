@@ -27,6 +27,19 @@ struct RealKindleConversionTests {
         }
     }
 
+    @Test("Real TXT to AZW3 conversion accepts JPG and PNG covers", arguments: ["jpg", "png"])
+    func textCustomCover(ext: String) async throws {
+        try await TestFileSystem.withTemporaryDirectory { directory in
+            let source = try TestFileSystem.writeText("第一章 测试\n这是正文。", named: "小说.txt", in: directory)
+            let cover = try TestFileSystem.writeImage(named: "cover.\(ext)", width: 1236, height: 1648, in: directory)
+            let job = TextConversionJob(sourceURL: source, outputFormat: .azw3, indentParagraph: true,
+                                        keepLineBreaks: false, coverImageURL: cover, chapterPatterns: [],
+                                        authorName: "测试作者", kindlegenURL: realKindlegenURL)
+            try await TextConversionWorker.run(job: job) { _ in }
+            try verifyMOBI(source.deletingPathExtension().appendingPathExtension("azw3"))
+        }
+    }
+
     @Test("Real comic worker packages its selected cover")
     func singleComic() async throws {
         try await TestFileSystem.withTemporaryDirectory { directory in
