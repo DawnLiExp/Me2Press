@@ -8,6 +8,8 @@
 //
 
 import Foundation
+import ImageIO
+import UniformTypeIdentifiers
 
 enum EPUBBuilder {
     // MARK: - Async entry point
@@ -67,11 +69,26 @@ enum EPUBBuilder {
             try fm.createDirectory(at: oebpsDir.appendingPathComponent("Images"), withIntermediateDirectories: true)
             try fm.createDirectory(at: oebpsDir.appendingPathComponent("Text"), withIntermediateDirectories: true)
 
-            var hasCover = false
+            var coverFilename = ""
+            var coverMediaType = ""
             if let cover = coverImage {
-                try fm.copyItem(at: cover, to: oebpsDir.appendingPathComponent("Images/cover.jpg"))
-                hasCover = true
+                guard let source = CGImageSourceCreateWithURL(cover as CFURL, nil),
+                      let type = CGImageSourceGetType(source) else {
+                    throw CocoaError(.fileReadCorruptFile)
+                }
+                switch type as String {
+                case UTType.jpeg.identifier:
+                    coverFilename = "cover.jpg"
+                    coverMediaType = "image/jpeg"
+                case UTType.png.identifier:
+                    coverFilename = "cover.png"
+                    coverMediaType = "image/png"
+                default:
+                    throw CocoaError(.fileReadUnknown)
+                }
+                try fm.copyItem(at: cover, to: oebpsDir.appendingPathComponent("Images/\(coverFilename)"))
             }
+            let hasCover = coverImage != nil
 
             // IMPORTANT: h1 intentionally matches the old h2 style so single-level books are unaffected.
             // h2/h3 are only visible in multi-level TOC books.
@@ -131,7 +148,7 @@ enum EPUBBuilder {
                   <link href="../Styles/style.css" type="text/css" rel="stylesheet"/>
                 </head>
                 <body style="margin: 0; padding: 0; text-align: center;">
-                  <img src="../Images/cover.jpg" alt="Cover" class="cover-img"/>
+                  <img src="../Images/\(coverFilename)" alt="Cover" class="cover-img"/>
                 </body>
                 </html>
                 """
@@ -237,7 +254,7 @@ enum EPUBBuilder {
             opf += "    <item id=\"nav\" href=\"nav.xhtml\" media-type=\"application/xhtml+xml\" properties=\"nav\"/>\n"
             opf += "    <item id=\"style\" href=\"Styles/style.css\" media-type=\"text/css\"/>\n"
             if hasCover {
-                opf += "    <item id=\"cover-image\" href=\"Images/cover.jpg\" media-type=\"image/jpeg\" properties=\"cover-image\"/>\n"
+                opf += "    <item id=\"cover-image\" href=\"Images/\(coverFilename)\" media-type=\"\(coverMediaType)\" properties=\"cover-image\"/>\n"
             }
             opf += "    \(manifestItems.joined(separator: "\n    "))\n"
             opf += "  </manifest>\n"
