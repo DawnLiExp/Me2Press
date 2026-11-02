@@ -8,16 +8,55 @@
 import Foundation
 
 struct KindleGenProbeResult: Sendable, Equatable {
-    let isReady: Bool
     let version: String
+    let failure: KindleGenProbeFailure?
 
-    nonisolated static let unavailable = KindleGenProbeResult(isReady: false, version: "")
+    var isReady: Bool { failure == nil }
+}
+
+enum KindleGenProbeFailure: Sendable, Equatable {
+    case missing
+    case notExecutable
+    case launchFailed(String)
+    case timedOut
+    case unrecognizedVersion
+    case cancelled
+
+    var description: String {
+        switch self {
+        case .missing: String(localized: "kindlegen.failure.missing")
+        case .notExecutable: String(localized: "kindlegen.failure.not_executable")
+        case .launchFailed(let reason): String(localized: "kindlegen.failure.launch \(reason)")
+        case .timedOut: String(localized: "kindlegen.failure.timeout")
+        case .unrecognizedVersion: String(localized: "kindlegen.failure.version")
+        case .cancelled: String(localized: "log.cancelled")
+        }
+    }
+
+    var recoverySuggestion: String {
+        switch self {
+        case .missing, .notExecutable, .unrecognizedVersion:
+            String(localized: "kindlegen.recovery.select")
+        case .launchFailed:
+            String(localized: "kindlegen.recovery.launch")
+        case .timedOut:
+            String(localized: "kindlegen.recovery.timeout")
+        case .cancelled:
+            ""
+        }
+    }
 }
 
 actor KindleGenProbeService {
-    func probe(executableURL: URL) async -> KindleGenProbeResult {
+    func probe(executableURL: URL, timeout: Duration = .seconds(5)) async -> KindleGenProbeResult {
+        if Task.isCancelled {
+            return KindleGenProbeResult(version: "", failure: .cancelled)
+        }
+        guard FileManager.default.fileExists(atPath: executableURL.path) else {
+            return KindleGenProbeResult(version: "", failure: .missing)
+        }
         guard FileManager.default.isExecutableFile(atPath: executableURL.path) else {
-            return .unavailable
+            return KindleGenProbeResult(version: "", failure: .notExecutable)
         }
 
         let process = Process()
@@ -34,12 +73,21 @@ actor KindleGenProbeService {
 
         let output: String
         do {
-            _ = try await runProcess(process, timeout: .seconds(5))
+            _ = try await runProcess(process, timeout: timeout)
+            try? pipe.fileHandleForWriting.close()
             output = await outputTask.value
+        } catch ProbeError.timedOut {
+            try? pipe.fileHandleForWriting.close()
+            _ = await outputTask.value
+            return KindleGenProbeResult(version: "", failure: .timedOut)
+        } catch is CancellationError {
+            try? pipe.fileHandleForWriting.close()
+            _ = await outputTask.value
+            return KindleGenProbeResult(version: "", failure: .cancelled)
         } catch {
             try? pipe.fileHandleForWriting.close()
             _ = await outputTask.value
-            return .unavailable
+            return KindleGenProbeResult(version: "", failure: .launchFailed(error.localizedDescription))
         }
 
         let version = output
@@ -47,10 +95,10 @@ actor KindleGenProbeService {
             .first(where: { $0.contains("Amazon kindlegen") }) ?? ""
 
         if version.isEmpty {
-            return .unavailable
+            return KindleGenProbeResult(version: "", failure: .unrecognizedVersion)
         }
 
-        return KindleGenProbeResult(isReady: true, version: version)
+        return KindleGenProbeResult(version: version, failure: nil)
     }
 
     // MARK: - Private

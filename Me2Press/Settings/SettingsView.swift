@@ -57,6 +57,16 @@ struct SettingsView: View {
                     Text(settings.kindleGenStatusText)
                 }
             }
+            if let failure = settings.kindleGenFailure {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(failure.description)
+                        .textSelection(.enabled)
+                    Text(failure.recoverySuggestion)
+                        .foregroundStyle(.secondary)
+                }
+                .font(.caption)
+                .fixedSize(horizontal: false, vertical: true)
+            }
         } header: {
             Text(String(localized: "KindleGen Configuration"))
         }

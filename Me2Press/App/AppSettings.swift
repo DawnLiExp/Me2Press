@@ -44,6 +44,7 @@ struct ChapterPattern: Identifiable, Codable, Equatable, Sendable {
 @MainActor
 @Observable
 class AppSettings {
+    private let defaults: UserDefaults
     static let concurrencyRange: ClosedRange<Int> = 1 ... 6
 
     // MARK: - Chapter Pattern Defaults
@@ -57,7 +58,7 @@ class AppSettings {
 
     var kindlegenURL: URL? {
         didSet {
-            UserDefaults.standard.set(kindlegenURL?.path, forKey: "kindlegenPath")
+            defaults.set(kindlegenURL?.path, forKey: "kindlegenPath")
         }
     }
 
@@ -73,6 +74,7 @@ class AppSettings {
         }
     }
     var kindlegenVersion = ""
+    private(set) var kindleGenFailure: KindleGenProbeFailure?
 
     private let kindleGenProbeService = KindleGenProbeService()
     private var kindleGenProbeTask: Task<Void, Never>?
@@ -90,7 +92,7 @@ class AppSettings {
                 maxConcurrency = clamped
                 return
             }
-            UserDefaults.standard.set(maxConcurrency, forKey: "maxConcurrency")
+            defaults.set(maxConcurrency, forKey: "maxConcurrency")
         }
     }
 
@@ -99,7 +101,7 @@ class AppSettings {
     /// Written to dc:creator in every newly generated EPUB and MOBI file.
     var authorName: String = "Me2Press" {
         didSet {
-            UserDefaults.standard.set(authorName, forKey: "authorName")
+            defaults.set(authorName, forKey: "authorName")
         }
     }
 
@@ -110,21 +112,22 @@ class AppSettings {
     var chapterPatterns: [ChapterPattern] = AppSettings.defaultChapterPatterns {
         didSet {
             if let data = try? JSONEncoder().encode(chapterPatterns) {
-                UserDefaults.standard.set(data, forKey: "chapterPatterns")
+                defaults.set(data, forKey: "chapterPatterns")
             }
         }
     }
 
     // MARK: - Init
 
-    init() {
-        if let path = UserDefaults.standard.string(forKey: "kindlegenPath") {
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        if let path = defaults.string(forKey: "kindlegenPath") {
             kindlegenURL = URL(fileURLWithPath: path)
         }
-        let saved = UserDefaults.standard.integer(forKey: "maxConcurrency")
+        let saved = defaults.integer(forKey: "maxConcurrency")
         maxConcurrency = Self.concurrencyRange.contains(saved) ? saved : 1
 
-        if let savedAuthor = UserDefaults.standard.string(forKey: "authorName") {
+        if let savedAuthor = defaults.string(forKey: "authorName") {
             authorName = savedAuthor
         }
 
@@ -132,7 +135,7 @@ class AppSettings {
         //   1. [ChapterPattern] with level — current format, decoded as-is.
         //   2. [ChapterPattern] without level — decoded via decodeIfPresent, level defaults to 1.
         //   3. [String] — oldest format; each string is wrapped into a ChapterPattern(level: 1).
-        if let data = UserDefaults.standard.data(forKey: "chapterPatterns") {
+        if let data = defaults.data(forKey: "chapterPatterns") {
             if let patterns = try? JSONDecoder().decode([ChapterPattern].self, from: data),
                !patterns.isEmpty
             {
@@ -194,12 +197,14 @@ class AppSettings {
 
         kindleGenStatus = result.isReady ? .ready : .invalid
         kindlegenVersion = result.version
+        kindleGenFailure = result.failure
         kindleGenProbeTask = nil
     }
 
     private func resetKindleGenStatus() {
         kindleGenStatus = .missing
         kindlegenVersion = ""
+        kindleGenFailure = nil
     }
 }
 

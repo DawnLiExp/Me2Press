@@ -529,6 +529,142 @@
         }
       }
     },
+    "kindlegen.failure.launch %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KindleGen could not start: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KindleGen 无法启动：%@"
+          }
+        }
+      }
+    },
+    "kindlegen.failure.missing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The selected KindleGen file no longer exists."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所选 KindleGen 文件已不存在。"
+          }
+        }
+      }
+    },
+    "kindlegen.failure.not_executable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The selected file cannot be executed."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所选文件没有执行权限。"
+          }
+        }
+      }
+    },
+    "kindlegen.failure.timeout" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KindleGen did not respond within 5 seconds."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KindleGen 在 5 秒内未响应。"
+          }
+        }
+      }
+    },
+    "kindlegen.failure.version" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The selected program did not report a KindleGen version."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所选程序未返回 KindleGen 版本信息。"
+          }
+        }
+      }
+    },
+    "kindlegen.recovery.launch" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reopen or reinstall Kindle Previewer. If the error mentions an incompatible architecture, check whether the required Rosetta environment is installed."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请重新打开或安装 Kindle Previewer；若错误提示架构不兼容，请检查所需的 Rosetta 环境。"
+          }
+        }
+      }
+    },
+    "kindlegen.recovery.select" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select the KindleGen executable inside Kindle Previewer again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请重新选择 Kindle Previewer 内的 KindleGen 可执行文件。"
+          }
+        }
+      }
+    },
+    "kindlegen.recovery.timeout" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reopen Kindle Previewer, then select KindleGen again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请重新打开 Kindle Previewer，再选择 KindleGen。"
+          }
+        }
+      }
+    },
     "L1" : {
       "localizations" : {
         "zh-Hans" : {
