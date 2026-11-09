@@ -1,4 +1,4 @@
 // Single version source for Debug, Release, app and tests.
-// Version and build rules follow AGENTS.md; retain historical values until the next release.
+// Override CURRENT_PROJECT_VERSION for local builds; update these values for releases.
 MARKETING_VERSION = 1.1.0
 CURRENT_PROJECT_VERSION = 20260329

@@ -37,3 +37,7 @@ Temporary Items
 debug.log*
 Tree.md
 /output
+
+# Local development rules and documentation
+/.agents/
+/docs/dev/
