@@ -2,11 +2,38 @@ import Foundation
 import Testing
 @testable import Me2Press
 
-private let realKindlegenURL = URL(fileURLWithPath: "/Applications/Kindle Previewer 3.app/Contents/lib/fc/bin/kindlegen")
+private let realKindlegenURL = URL(fileURLWithPath:
+    ProcessInfo.processInfo.environment["ME2PRESS_TEST_KINDLEGEN"]
+    ?? "/Applications/Kindle Previewer 3.app/Contents/lib/fc/bin/kindlegen")
 
 @Suite("Real KindleGen pipelines", .serialized,
        .enabled(if: FileManager.default.isExecutableFile(atPath: realKindlegenURL.path)))
 struct RealKindleConversionTests {
+    @Test("Comic CLI jobs use their output directory and keep failures scoped to the source")
+    func explicitComicOutput() async throws {
+        try await TestFileSystem.withTemporaryDirectory { directory in
+            let source = try TestFileSystem.createDirectory(named: "Comic", in: directory)
+            let output = directory.appendingPathComponent("output")
+            _ = try TestFileSystem.writeImage(named: "001.jpg", width: 1236, height: 1648, in: source)
+            let good = ComicConversionJob(sourceFolderURL: source, authorName: "Author",
+                                          kindlegenURL: realKindlegenURL, outputDirectoryURL: output)
+            let missing = directory.appendingPathComponent("missing")
+            let bad = ComicConversionJob(sourceFolderURL: missing, authorName: "Author",
+                                         kindlegenURL: realKindlegenURL, outputDirectoryURL: output)
+            let events = ScopedConversionEvents()
+            await ConversionCoordinator().runBatch(
+                jobs: [.comic(good), .comic(bad)], maxConcurrency: 2,
+                jobEventSink: { source, event in await events.record(source, event) },
+                eventSink: { _ in }
+            )
+            try verifyMOBI(output.appendingPathComponent("Comic.mobi"))
+            #expect(!FileManager.default.fileExists(atPath: directory.appendingPathComponent("Comic.mobi").path))
+            let results = await events.snapshot()
+            #expect(results.succeeded == [source])
+            #expect(results.failed == [missing])
+        }
+    }
+
     @Test("TXT to AZW3 and existing EPUB to AZW3 use the real tool")
     func textAndEPUB() async throws {
         try await TestFileSystem.withTemporaryDirectory { directory in
@@ -81,4 +108,17 @@ struct RealKindleConversionTests {
         #expect(data.range(of: Data("BOOKMOBI".utf8)) != nil)
         #expect(data.range(of: Data("EBOK".utf8)) != nil)
     }
+}
+
+private actor ScopedConversionEvents {
+    var succeeded: [URL] = []
+    var failed: [URL] = []
+    func record(_ source: URL, _ event: ConversionEvent) {
+        switch event {
+        case .itemSucceeded: succeeded.append(source)
+        case .itemFailed: failed.append(source)
+        default: break
+        }
+    }
+    func snapshot() -> (succeeded: [URL], failed: [URL]) { (succeeded, failed) }
 }

@@ -98,6 +98,9 @@ enum ZIPWriter {
 
     /// Runs a process to completion, sending SIGTERM on Task cancellation.
     private static func runProcess(_ process: Process) async throws {
+        // Archive tools can print banners even on success. Keep stdout available for CLI JSONL.
+        process.standardOutput = FileHandle.standardError
+        process.standardError = FileHandle.standardError
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { cont in
                 process.terminationHandler = { _ in cont.resume(returning: ()) }

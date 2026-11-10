@@ -6,6 +6,42 @@
 	objectVersion = 90;
 	objects = {
 
+/* Begin PBXCopyFilesBuildPhase section */
+		72F887AFECA289F829C8B5A8 /* me2press-cli */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (8378811087FF0D8A7847A01B,);
+			name = "Embed CLI";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXBuildFile section */
+		8378811087FF0D8A7847A01B /* me2press-cli */ = {
+			isa = PBXBuildFile;
+			fileRef = 550CC35D9CE9F4349E223BEC;
+			settings = { ATTRIBUTES = (CodeSignOnCopy,); };
+		};
+/* End PBXBuildFile section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		FEA6BC5AF4C4209DDB42814D /* me2press-cli */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"App",
+				"Features",
+				"Settings",
+				"Me2PressApp.swift",
+				"Assets.xcassets",
+				"Localization",
+				"LICENSE",
+			);
+			target = 8587050645326B1E0B60134E;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXContainerItemProxy section */
 		FCB100012F70000100AAA001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -14,23 +50,42 @@
 			remoteGlobalIDString = FC2A7C442F69269400B28698;
 			remoteInfo = Me2Press;
 		};
+		F4F1EA2D93C92721FC83054D /* me2press-cli */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FC2A7C3D2F69269400B28698;
+			proxyType = 1;
+			remoteGlobalIDString = 8587050645326B1E0B60134E;
+			remoteInfo = "me2press-cli";
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		FCB1000C2F70000100AAA001 /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		FC2A7C452F69269400B28698 /* Me2Press.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Me2Press.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FCB100022F70000100AAA001 /* Me2PressTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Me2PressTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		550CC35D9CE9F4349E223BEC /* me2press-cli */ = {
+			isa = PBXFileReference;
+			explicitFileType = "compiled.mach-o.executable";
+			path = "me2press-cli";
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		FC2A7CDE2F69301800B28698 /* Me2Press */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (FEA6BC5AF4C4209DDB42814D,);
 			path = Me2Press;
 			sourceTree = "<group>";
 		};
 		FCB100032F70000100AAA001 /* Me2PressTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Me2PressTests;
+			sourceTree = "<group>";
+		};
+		15AFF436BE12A09473060D02 /* me2press-cli */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CLI;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -46,12 +101,19 @@
 			files = (
 			);
 		};
+		294B3A42128A5493EE35982F /* me2press-cli */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		FC2A7C3C2F69269400B28698 = {
 			isa = PBXGroup;
 			children = (
+				15AFF436BE12A09473060D02 /* CLI */,
 				FCB1000C2F70000100AAA001 /* Version.xcconfig */,
 				FC2A7CDE2F69301800B28698 /* Me2Press */,
 				FCB100032F70000100AAA001 /* Me2PressTests */,
@@ -62,6 +124,7 @@
 		FC2A7C462F69269400B28698 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				550CC35D9CE9F4349E223BEC /* me2press-cli */,
 				FC2A7C452F69269400B28698 /* Me2Press.app */,
 				FCB100022F70000100AAA001 /* Me2PressTests.xctest */,
 			);
@@ -75,10 +138,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = FC2A7C502F69269600B28698 /* Build configuration list for PBXNativeTarget "Me2Press" */;
 			buildPhases = (
+				72F887AFECA289F829C8B5A8 /* Embed CLI */,
 				FC2A7C412F69269400B28698 /* Sources */,
 				FC2A7C422F69269400B28698 /* Frameworks */,
 				FC2A7C432F69269400B28698 /* Resources */,
 			);
+			dependencies = (6D71E4CED4717D41219E8977,);
 			buildRules = (
 			);
 			fileSystemSynchronizedGroups = (
@@ -109,6 +174,18 @@
 			productName = Me2PressTests;
 			productReference = FCB100022F70000100AAA001 /* Me2PressTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		8587050645326B1E0B60134E /* me2press-cli */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EF4D198F87B7E92C78A5E370;
+			buildPhases = (008D77D766F3328FF52862A7,294B3A42128A5493EE35982F,);
+			buildRules = ();
+			dependencies = ();
+			fileSystemSynchronizedGroups = (FC2A7CDE2F69301800B28698,15AFF436BE12A09473060D02,);
+			name = "me2press-cli";
+			productName = "me2press-cli";
+			productReference = 550CC35D9CE9F4349E223BEC;
+			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
 
@@ -145,6 +222,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				8587050645326B1E0B60134E /* me2press-cli */,
 				FC2A7C442F69269400B28698 /* Me2Press */,
 				FCB100052F70000100AAA001 /* Me2PressTests */,
 			);
@@ -175,6 +253,12 @@
 			files = (
 			);
 		};
+		008D77D766F3328FF52862A7 /* me2press-cli */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -182,6 +266,11 @@
 			isa = PBXTargetDependency;
 			target = FC2A7C442F69269400B28698 /* Me2Press */;
 			targetProxy = FCB100012F70000100AAA001 /* PBXContainerItemProxy */;
+		};
+		6D71E4CED4717D41219E8977 /* me2press-cli */ = {
+			isa = PBXTargetDependency;
+			target = 8587050645326B1E0B60134E;
+			targetProxy = F4F1EA2D93C92721FC83054D;
 		};
 /* End PBXTargetDependency section */
 
@@ -447,6 +536,34 @@
 			};
 			name = Release;
 		};
+		370ED2411850225F22C84E0C /* me2press-cli */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "me2press-cli";
+				SWIFT_VERSION = "6.0";
+				MACOSX_DEPLOYMENT_TARGET = "15.0";
+				SKIP_INSTALL = "YES";
+				CODE_SIGN_STYLE = "Automatic";
+				ENABLE_APP_SANDBOX = "NO";
+				GENERATE_INFOPLIST_FILE = "NO";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = "MainActor";
+			};
+			name = Debug;
+		};
+		0C6AEFC0AA836649F375DC39 /* me2press-cli */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "me2press-cli";
+				SWIFT_VERSION = "6.0";
+				MACOSX_DEPLOYMENT_TARGET = "15.0";
+				SKIP_INSTALL = "YES";
+				CODE_SIGN_STYLE = "Automatic";
+				ENABLE_APP_SANDBOX = "NO";
+				GENERATE_INFOPLIST_FILE = "NO";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = "MainActor";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -472,6 +589,12 @@
 				FCB100092F70000100AAA001 /* Debug configuration for PBXNativeTarget "Me2PressTests" */,
 				FCB1000A2F70000100AAA001 /* Release configuration for PBXNativeTarget "Me2PressTests" */,
 			);
+			defaultConfigurationName = Release;
+		};
+		EF4D198F87B7E92C78A5E370 /* me2press-cli */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (370ED2411850225F22C84E0C,0C6AEFC0AA836649F375DC39,);
+			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */

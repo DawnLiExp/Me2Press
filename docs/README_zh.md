@@ -53,3 +53,7 @@ Me2Press 是一款 macOS 本地 Kindle 书籍制作工具，支持将 TXT 小说
 ## 🙏 感谢
 
 漫画打包格式参考了 [KCC (Kindle Comic Converter)](https://github.com/ciromattia/kcc)。
+
+## 命令行接口
+
+应用包内附带与图形界面共用处理核心的 CLI。命令、JSON 请求和结果格式见 [CLI 使用说明](CLI.md)。

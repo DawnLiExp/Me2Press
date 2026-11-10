@@ -30,17 +30,20 @@ struct ComicConversionJob: Sendable {
     let parallelConversions: Int
     let readingDirection: ComicReadingDirection
     let coverImageURL: URL?
+    let outputDirectoryURL: URL?
 
     nonisolated init(sourceFolderURL: URL, authorName: String, kindlegenURL: URL,
                      parallelConversions: Int = 1, readingDirection: ComicReadingDirection = .rightToLeft,
-                     coverImageURL: URL? = nil) {
+                     coverImageURL: URL? = nil, outputDirectoryURL: URL? = nil) {
         self.sourceFolderURL = sourceFolderURL
         self.authorName = authorName
         self.kindlegenURL = kindlegenURL
         self.parallelConversions = parallelConversions
         self.readingDirection = readingDirection
         self.coverImageURL = coverImageURL
+        self.outputDirectoryURL = outputDirectoryURL
     }
+
 }
 
 enum ConversionJob: Sendable {

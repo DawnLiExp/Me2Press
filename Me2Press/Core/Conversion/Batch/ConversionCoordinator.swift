@@ -16,6 +16,7 @@ actor ConversionCoordinator {
     func runBatch(
         jobs: [ConversionJob],
         maxConcurrency: Int,
+        jobEventSink: (@Sendable (URL, ConversionEvent) async -> Void)? = nil,
         eventSink: @escaping ConversionEventSink
     ) async {
         guard !jobs.isEmpty else { return }
@@ -27,7 +28,7 @@ actor ConversionCoordinator {
         if maxConcurrency <= 1 {
             for (index, job) in jobs.enumerated() {
                 if Task.isCancelled { break }
-                let result = await Self.run(job: job, index: index, eventSink: eventSink)
+                let result = await Self.run(job: job, index: index, jobEventSink: jobEventSink, eventSink: eventSink)
                 if !result.isCancelled {
                     await eventSink(.itemCompleted(name: result.name))
                 }
@@ -49,7 +50,7 @@ actor ConversionCoordinator {
                     if Task.isCancelled { break }
 
                     group.addTask {
-                        await Self.run(job: job, index: index, eventSink: eventSink)
+                        await Self.run(job: job, index: index, jobEventSink: jobEventSink, eventSink: eventSink)
                     }
                     inFlight += 1
                 }
@@ -80,8 +81,13 @@ actor ConversionCoordinator {
     private nonisolated static func run(
         job: ConversionJob,
         index: Int,
-        eventSink: @escaping ConversionEventSink
+        jobEventSink: (@Sendable (URL, ConversionEvent) async -> Void)?,
+        eventSink batchSink: @escaping ConversionEventSink
     ) async -> ItemResult {
+        let eventSink: ConversionEventSink = { event in
+            await batchSink(event)
+            await jobEventSink?(job.sourceURL, event)
+        }
         let name = job.displayName
         await eventSink(.itemStarted(index: index + 1, name: name))
         await eventSink(.log(level: .info, message: String(localized: "log.start \(name)")))

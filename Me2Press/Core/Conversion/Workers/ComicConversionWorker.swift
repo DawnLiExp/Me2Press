@@ -15,7 +15,8 @@ enum ComicConversionWorker {
         let runner = KindleGenRunner(kindlegenPath: job.kindlegenURL)
         let folderURL = job.sourceFolderURL
         let baseName = folderURL.lastPathComponent
-        let outputFolder = folderURL.deletingLastPathComponent()
+        let outputFolder = job.outputDirectoryURL ?? folderURL.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: outputFolder, withIntermediateDirectories: true)
 
         await ConversionWorkerSupport.emitProgress(
             local: 0.0,

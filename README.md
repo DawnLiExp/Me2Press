@@ -51,3 +51,7 @@ All three modes support:
 ## 🙏 Acknowledgements
 
 Comic packaging format references [KCC (Kindle Comic Converter)](https://github.com/ciromattia/kcc).
+
+## Command-line interface
+
+The app includes a command-line tool that shares its processing core. See [CLI usage and JSON requests](docs/CLI.md).
