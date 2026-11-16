@@ -27,6 +27,43 @@ struct RealKindleConversionTests {
         }
     }
 
+    @Test("EPUB links targeting a chapter body ID survive KindleGen conversion")
+    func epubBodyIDLinks() async throws {
+        try await TestFileSystem.withTemporaryDirectory { directory in
+            let unpacked = directory.appendingPathComponent("Unpacked")
+            let book = ParsedBook(title: "目录测试", chapters: [
+                Chapter(title: "第一章", paragraphs: [#"<a href="ch002.xhtml#2-chapter">第二章</a>"#], level: 1),
+                Chapter(title: "第二章", paragraphs: ["这是第二章。"], level: 1),
+            ])
+            try EPUBBuilder.build(book: book, uuid: UUID().uuidString, coverImage: nil, indentParagraph: true,
+                                  author: "测试作者", tempDir: unpacked)
+            let oebps = unpacked.appendingPathComponent("OEBPS")
+            let chapter = oebps.appendingPathComponent("Text/ch002.xhtml")
+            let html = try String(contentsOf: chapter, encoding: .utf8)
+            try html.replacingOccurrences(of: "<body>", with: "<!-- <body id='example'> -->\n<body id='2-chapter'>")
+                .write(to: chapter, atomically: true, encoding: .utf8)
+            for name in ["toc.ncx", "nav.xhtml"] {
+                let toc = oebps.appendingPathComponent(name)
+                let contents = try String(contentsOf: toc, encoding: .utf8)
+                let link = #"Text/ch002.xhtml""#
+                try #require(contents.contains(link))
+                try contents.replacingOccurrences(of: link, with: #"Text/ch002.xhtml#2-chapter""#)
+                    .write(to: toc, atomically: true, encoding: .utf8)
+            }
+
+            let epub = directory.appendingPathComponent("book.epub")
+            try await ZIPWriter.pack(directoryURL: unpacked, to: epub)
+            let original = try Data(contentsOf: epub)
+            try await EPUBConversionWorker.run(job: EPUBConversionJob(sourceURL: epub, kindlegenURL: realKindlegenURL)) { event in
+                if case .log(.warn, let message) = event {
+                    #expect(!message.contains("W14001"))
+                }
+            }
+            try verifyMOBI(epub.deletingPathExtension().appendingPathExtension("azw3"))
+            #expect(try Data(contentsOf: epub) == original)
+        }
+    }
+
     @Test("Real TXT to AZW3 conversion accepts JPG and PNG covers", arguments: ["jpg", "png"])
     func textCustomCover(ext: String) async throws {
         try await TestFileSystem.withTemporaryDirectory { directory in

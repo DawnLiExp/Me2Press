@@ -54,7 +54,8 @@ enum Me2PressError: LocalizedError {
     var recoverySuggestion: String? {
         switch self {
         case .epubTooLarge: return String(localized: "error.recovery.epub_too_large")
-        case .kindlegenFailed: return String(localized: "error.recovery.check_kindlegen")
+        case .kindlegenFailed(_, let output) where output.contains("E24010"):
+            return String(localized: "error.recovery.kindlegen_toc_links")
         default: return nil
         }
     }
