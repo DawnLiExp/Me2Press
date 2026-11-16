@@ -581,23 +581,6 @@
         }
       }
     },
-    "error.recovery.check_kindlegen" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please check that kindlegen is correctly configured in Settings."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请在设置中确认 kindlegen 路径配置正确"
-          }
-        }
-      }
-    },
     "error.recovery.epub_too_large" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -611,6 +594,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "请将源文件拆分为更小的卷后重试"
+          }
+        }
+      }
+    },
+    "error.recovery.kindlegen_toc_links" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check whether the EPUB table of contents links point to valid locations in the book."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请检查 EPUB 的目录链接能否跳转到书中的对应位置"
           }
         }
       }

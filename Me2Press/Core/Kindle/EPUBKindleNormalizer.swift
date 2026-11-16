@@ -10,6 +10,9 @@ import Foundation
 enum EPUBKindleNormalizer {
     private nonisolated static let utf8XMLDeclaration = Data("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n".utf8)
     private nonisolated static let utf8BOM = Data([0xEF, 0xBB, 0xBF])
+    private nonisolated static let bodyIDPattern = try! NSRegularExpression(
+        pattern: #"(?is)<!--.*?-->|<!\[CDATA\[.*?\]\]>|<body(?=\s)(?:[^<>"']|"[^"]*"|'[^']*')*?\s+id\s*=\s*("[^"]+"|'[^']+')(?:[^<>"']|"[^"]*"|'[^']*')*(?<!/)>"#
+    )
 
     nonisolated static func normalizeIfNeeded(
         epubURL: URL,
@@ -55,6 +58,29 @@ enum EPUBKindleNormalizer {
 
     // MARK: - Private
 
+    private nonisolated static func dataByAddingBodyAnchorIfNeeded(_ data: Data) -> Data? {
+        guard var html = String(validating: data, as: UTF8.self) else { return nil }
+
+        let range = NSRange(html.startIndex..<html.endIndex, in: html)
+        var bodyMatch: NSTextCheckingResult?
+        bodyIDPattern.enumerateMatches(in: html, range: range) { match, _, stop in
+            // Comments and CDATA are consumed without capturing an ID.
+            guard let match, match.range(at: 1).location != NSNotFound else { return }
+            bodyMatch = match
+            stop.pointee = true
+        }
+        guard let bodyMatch,
+              let tag = Range(bodyMatch.range, in: html),
+              let quotedID = Range(bodyMatch.range(at: 1), in: html) else { return nil }
+
+        // KindleGen ignores body IDs as link targets but accepts named anchors.
+        // Retain the body ID so styles can still refer to it.
+        let anchor = "<a name=\(html[quotedID])></a>"
+        guard !html[tag.upperBound...].hasPrefix(anchor) else { return nil }
+        html.insert(contentsOf: anchor, at: tag.upperBound)
+        return Data(html.utf8)
+    }
+
     private nonisolated static func normalizeHTMLFiles(in rootURL: URL) throws -> Int {
         guard let enumerator = FileManager.default.enumerator(
             at: rootURL,
@@ -72,7 +98,8 @@ enum EPUBKindleNormalizer {
             }
 
             let data = try Data(contentsOf: fileURL)
-            guard let normalized = dataByAddingUTF8DeclarationIfNeeded(data) else {
+            let declared = dataByAddingUTF8DeclarationIfNeeded(data)
+            guard let normalized = dataByAddingBodyAnchorIfNeeded(declared ?? data) ?? declared else {
                 continue
             }
 

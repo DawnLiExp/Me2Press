@@ -1,5 +1,7 @@
 # Comic command-line interface
 
+The CLI is maintained on `feat/comic-cli` primarily for personal use. `main` remains the primary release branch; this branch receives updates from `main` as needed.
+
 The app build embeds `Me2Press.app/Contents/MacOS/me2press-cli`. Build/archive the Me2Press scheme to include it. GUI and CLI share the comic conversion workers.
 
 ```sh
